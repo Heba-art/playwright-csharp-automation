@@ -59,12 +59,16 @@ PlaywrightTests/
 ```bash
 # Navigate to project folder
 cd playwright-csharp-automation/PlaywrightTests
+
 # Restore dependencies
 dotnet restore
+
 # Install Playwright drivers
 pwsh bin/Debug/net*/playwright.ps1 install
+
 # Run all tests
 dotnet test
+
 🔹 From Visual Studio 2022
 Open PlaywrightTests.csproj in Visual Studio 2022.
 Open Test Explorer (Test → Test Explorer).
