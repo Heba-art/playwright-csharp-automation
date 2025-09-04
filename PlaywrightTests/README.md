@@ -14,7 +14,7 @@ Target application: [nopCommerce Demo](https://demo.nopcommerce.com)
 
 
 ## 📂 Project Structure
-
+```
 PlaywrightTests/
 │
 ├── 📁 Pages/
@@ -33,7 +33,7 @@ PlaywrightTests/
 ├── 📄 appsettings.json # Config file (baseUrl, browser, environment details).
 │
 └── 📄 README.md # Project documentation (purpose, setup, run instructions).
-
+```
 ---
 ## ✅ Test Cases (Phase 1)
 
