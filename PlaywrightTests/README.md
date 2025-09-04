@@ -39,18 +39,18 @@ PlaywrightTests/
 
 ## ✅ Test Cases (Phase 1)
 
-| **ID**   | **Title** | **Preconditions** | **Test Data** | **Expected Result** | **Priority** | **Type** | **Status** |
-|----------|------------|-------------------|----------------|----------------------|--------------|-----------|------------|
-| TC-001 | 📝 User Registration – Happy Path | Not logged in | Unique email, valid details | ✅ Success message; user logged in | 🔴 High | 🚀 Smoke / Functional | ⏳ Planned |
-| TC-002 | 🔑 Login with Valid Credentials | Registered user (TC-001) | Valid email/password | ✅ Login succeeds; My Account visible | 🔴 High | 🚀 Smoke | ⏳ Planned |
-| TC-003 | ❌ Login with Invalid Password | Registered user | Valid email, wrong password | ⚠️ Error shown; login fails | 🔴 High | 🧪 Negative | ⏳ Planned |
-| TC-004 | 🔍 Search Product – Exact Match | None | Keyword: “Build your own computer” | ✅ Product appears in results | 🟡 Medium | ⚙️ Functional | ⏳ Planned |
-| TC-005 | 🛒 Add to Cart from Product Page | None | Product: “Build your own computer” | ✅ Item in cart; correct name, price | 🔴 High | 🚀 Smoke / Functional | ⏳ Planned |
-| TC-006 | 🔄 Update Quantity in Cart | Item already in cart | Qty=2 | 🔢 Subtotal recalculated | 🟡 Medium | ⚙️ Functional | ⏳ Planned |
-| TC-007 | 🗑️ Remove Item from Cart | Item already in cart | — | 🆓 Cart empty message | 🟡 Medium | ⚙️ Functional | ⏳ Planned |
-| TC-008 | 💖 Wishlist to Cart Flow | Logged in user | Any product | ✅ Item moved/added to cart | 🟢 Low | 🔁 Regression | ⏳ Planned |
-| TC-009 | 🏷️ Checkout as Guest – Valid Flow | Cart has item, logged out | Guest billing + shipping info | 🎉 Order placed successfully | 🔴 High | 🔁 Regression / Functional | ⏳ Planned |
-| TC-010 | 📊 Sort Products – Price Low → High | None | Category: Computers → Desktops | 📈 Products sorted ascending | 🟡 Medium | 🔁 Regression | ⏳ Planned |
+| **ID**   | **Title**                          | **Preconditions**         | **Test Data**                   | **Expected Result**                     | **Priority** | **Type**                | **Status** |
+|----------|-------------------------------------|---------------------------|---------------------------------|------------------------------------------|--------------|-------------------------|------------|
+| TC-001   | User Registration – Happy Path      | Not logged in             | Unique email, valid details     | Success message; user logged in          | 🔴 High      | Smoke / Functional      | Passed     |
+| TC-002   | Login with Valid Credentials        | Registered user (TC-001)  | Valid email/password            | Login succeeds; My Account visible       | 🔴 High      | Smoke                   | Passed     |
+| TC-003   | Login with Invalid Password         | Registered user           | Valid email, wrong password     | Error shown; login fails                 | 🔴 High      | Negative                | Passed     |
+| TC-004   | Search Product – Exact Match        | None                      | “Build your own computer”       | Product appears in results               | 🟡 Medium    | Functional              | Passed     |
+| TC-005   | Add to Cart from Product Page       | None                      | “Build your own computer”       | Item in cart; correct name, price        | 🔴 High      | Smoke / Functional      | Passed     |
+| TC-006   | Update Quantity in Cart             | Item already in cart      | Qty=2                           | Subtotal recalculated                    | 🟡 Medium    | Functional              | Passed     |
+| TC-007   | Remove Item from Cart               | Item already in cart      | —                               | Cart empty message                       | 🟡 Medium    | Functional              | Passed     |
+| TC-008   | Wishlist to Cart Flow               | Logged in user            | Any product                     | Item moved/added to cart                 | 🟢 Low       | Regression              | Passed     |
+| TC-009   | Checkout as Guest – Valid Flow      | Cart has item, logged out | Guest billing + shipping info   | Order placed successfully                | 🔴 High      | Regression / Functional | Passed     |
+| TC-010   | Sort Products – Price Low → High    | None                      | Category: Computers → Desktops  | Products sorted ascending                | 🟡 Medium    | Regression              | Passed     |
 
 ---
 
