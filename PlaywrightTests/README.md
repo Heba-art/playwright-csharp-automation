@@ -35,7 +35,6 @@ PlaywrightTests/
 └── 📄 README.md # Project documentation (purpose, setup, run instructions).
 ```
 ---
-## ✅ Test Cases (Phase 1)
 
 ## ✅ Test Cases (Phase 1)
 
@@ -69,13 +68,11 @@ pwsh bin/Debug/net*/playwright.ps1 install
 
 # Run all tests
 dotnet test
+
 🔹 From Visual Studio 2022
 Open PlaywrightTests.csproj in Visual Studio 2022.
-
 Open Test Explorer (Test → Test Explorer).
-
 Click Run All Tests ▶️.
-
 See results (pass/fail) directly in IDE.
 
 🛠️ Tools & Frameworks
