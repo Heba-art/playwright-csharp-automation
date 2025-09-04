@@ -33,7 +33,6 @@ PlaywrightTests/
 ├── 📄 appsettings.json     # Configuration file to store settings outside of the code, such as the base URL of the web application, browser type, or test environment details.
 │
 └── 📄 README.md            # Project documentation. Explains the project's purpose, setup instructions, and how to execute the tests.
-
 ---
 ## ✅ Test Cases (Phase 1)
 
@@ -78,9 +77,7 @@ See results (pass/fail) directly in IDE.
 
 🛠️ Tools & Frameworks
 Playwright for .NET
-
 NUnit
-
 .NET 6/7
 
 Visual Studio 2022
