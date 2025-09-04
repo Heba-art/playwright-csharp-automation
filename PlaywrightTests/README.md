@@ -17,22 +17,23 @@ Target application: [nopCommerce Demo](https://demo.nopcommerce.com)
 
 PlaywrightTests/
 │
-├── 📂 Pages/
-│   ├── 📄 HomePage.cs        # Represents the Home Page. Contains selectors and methods for interacting with its elements (e.g., search bar, navigation links).
-│   ├── 📄 LoginPage.cs        # Represents the Login Page. Handles interactions like filling username/password fields and clicking the submit button.
-│   └── 📄 RegisterPage.cs     # Represents the User Registration Page. Manages form filling and submission logic.
+├── 📁 Pages/
+│ ├── 📄 HomePage.cs # Represents the Home Page. Contains selectors and methods for interacting with elements (e.g., search bar, navigation links).
+│ ├── 📄 LoginPage.cs # Represents the Login Page. Handles interactions like filling username/password fields and clicking the submit button.
+│ └── 📄 RegisterPage.cs # Represents the User Registration Page. Manages form filling and submission logic.
 │
-├── 📂 Tests/
-│   └── 📂 Auth/
-│       └── 📄 RegisterAndLoginTests.cs  # Contains the actual test methods (e.g., [Test]). It uses the Page objects to perform actions and NUnit/xUnit assertions to verify outcomes for registration and login scenarios.
+├── 📁 Tests/
+│ └── 📁 Auth/
+│ └── 📄 RegisterAndLoginTests.cs # Contains the actual test methods ([Test]). Uses Page Objects + NUnit assertions for registration/login scenarios.
 │
-├── 📂 Utils/
-│   ├── 📄 Faker.cs           # A helper class for generating random test data (e.g., unique emails, strong passwords) to ensure tests are independent and robust. Often uses a library like 'Bogus'.
-│   └── 📄 TestBase.cs         # A base class that other test classes inherit from. It handles common setup (e.g., launching the browser, creating a new page context) and teardown (e.g., closing the browser) logic to avoid code duplication.
+├── 📁 Utils/
+│ ├── 📄 Faker.cs # Helper class for generating random test data (unique emails, strong passwords).
+│ └── 📄 TestBase.cs # Base class for setup/teardown (launching browser, new page context, closing browser).
 │
-├── 📄 appsettings.json     # Configuration file to store settings outside of the code, such as the base URL of the web application, browser type, or test environment details.
+├── 📄 appsettings.json # Config file (baseUrl, browser, environment details).
 │
-└── 📄 README.md            # Project documentation. Explains the project's purpose, setup instructions, and how to execute the tests.
+└── 📄 README.md # Project documentation (purpose, setup, run instructions).
+
 ---
 ## ✅ Test Cases (Phase 1)
 
