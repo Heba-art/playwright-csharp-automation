@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace PlaywrightTests.Utils
 {
@@ -81,26 +82,32 @@ namespace PlaywrightTests.Utils
             // Close browser and dispose Playwright engine after all tests
             await _browser.CloseAsync();
             _playwright.Dispose();
-        }
 
-        // Utility method to print browser and environment info
+        // Clean up credential files
+        var dir = TestContext.CurrentContext.WorkDirectory;
+        foreach (var file in Directory.GetFiles(dir, "lastUser_*.json"))
+        {
+            try
+            {
+                File.Delete(file);
+                TestContext.Out.WriteLine($"[CLEANUP] Deleted {Path.GetFileName(file)}");
+            }
+            catch (Exception ex)
+            {
+                TestContext.Out.WriteLine($"[CLEANUP-ERROR] {ex.Message}");
+            }
+        }
+    }
+
+        // Optional: quick browser info dump
         protected async Task PrintBrowserInfoAsync()
         {
             var ua = await _page.EvaluateAsync<string>("navigator.userAgent");
-            var browserVersion = await _page.EvaluateAsync<string>("navigator.appVersion");
-            var platform = await _page.EvaluateAsync<string>("navigator.platform");
-
-            TestContext.Progress.WriteLine("===== Browser Info =====");
-            TestContext.Progress.WriteLine($"[INFO] User-Agent: {ua}");
-            TestContext.Progress.WriteLine($"[INFO] Browser Version: {browserVersion}");
-            TestContext.Progress.WriteLine($"[INFO] Platform: {platform}");
-            TestContext.Progress.WriteLine("=========================");
-            //for run: dotnet test --logger "console;verbosity=detailed"
+            TestContext.Out.WriteLine($"[INFO] UA: {ua}");
         }
-
     }
-}
 
+}
 
 
 

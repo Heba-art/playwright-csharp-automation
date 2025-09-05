@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace PlaywrightTests.Tests.Auth
 {
-    public class RegisterTests : TestBase
+    [TestFixture]
+    public class RegisterAndLoginTests : TestBase
     {
-        [Test]
+        [Test, Order(1)]
         public async Task Register_HappyPath_ShowsSuccessAndLogsUserIn()
         {
 
@@ -31,8 +32,36 @@ namespace PlaywrightTests.Tests.Auth
 
         // Assert – success message + user is logged in (My account visible)
         await Assertions.Expect(register.SuccessMessage).ToContainTextAsync("Your registration completed");
+        // Save creds for TC2
+        await CredentialStore.SaveAsync(email, password);
+
         await register.ContinueAsync();
         await Assertions.Expect(_page.Locator("a.ico-account")).ToBeVisibleAsync();
+
+        TestContext.Out.WriteLine($"✅ Registered & logged in as: {email}");
+
+
+        }
+   
+    
+        [Test, Order(2)]
+        public async Task Login_WithValidCredentials_ShouldSucceed()
+        {
+            // Load the latest registered user from TC001
+            var creds = await CredentialStore.LoadAsync();
+            Assert.That(creds, Is.Not.Null, "No saved credentials found. Run TC-001 (Register) first.");
+
+            var home = new HomePage(_page);
+            await home.GoToAsync(_baseUrl);
+            await home.OpenLoginAsync();
+
+            var loginPage = new LoginPage(_page);
+            await loginPage.LoginAsync(creds!.Email, creds.Password);
+
+            Assert.That(await loginPage.IsMyAccountVisibleAsync(),
+                    Is.True, "Login failed: 'My account' link not visible");
+
+            TestContext.Out.WriteLine($"✅ Login succeeded for: {creds.Email}");
 
 
         }
