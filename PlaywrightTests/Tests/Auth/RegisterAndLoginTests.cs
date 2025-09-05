@@ -1,8 +1,6 @@
 ﻿using Microsoft.Playwright;
-using NUnit.Framework;
 using PlaywrightTests.Pages;   
 using PlaywrightTests.Utils;   
-using System.Threading.Tasks;
 
 namespace PlaywrightTests.Tests.Auth
 {
@@ -40,10 +38,7 @@ namespace PlaywrightTests.Tests.Auth
 
         TestContext.Out.WriteLine($"✅ Registered & logged in as: {email}");
 
-
         }
-   
-    
         [Test, Order(2)]
         public async Task Login_WithValidCredentials_ShouldSucceed()
         {
