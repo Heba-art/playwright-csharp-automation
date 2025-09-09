@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,8 +19,10 @@ namespace PlaywrightTests.Pages
     private ILocator PasswordInput => _page.Locator("#Password");
     private ILocator LoginButton => _page.Locator("button.login-button");
     public ILocator MyAccountLink => _page.Locator("a.ico-account");
-    
-    public async Task LoginAsync (string email, string password)
+    private ILocator ErrorSummary => _page.Locator(".message-error.validation-summary-errors");
+
+
+        public async Task LoginAsync (string email, string password)
     {
             await EmailInput.FillAsync(email);
             await PasswordInput.FillAsync(password);
@@ -29,6 +32,13 @@ namespace PlaywrightTests.Pages
     {
         return await MyAccountLink.IsVisibleAsync();
     }
+    public async Task<bool> IsErrorVisibleAsync()
+        => await ErrorSummary.IsVisibleAsync();
+
+    public ILocator ErrorSummaryLocator => ErrorSummary;
+
+    public async Task<string> GetErrorTextAsync()
+        => (await ErrorSummary.InnerTextAsync() ?? string.Empty).Trim();
 
     }
 }
