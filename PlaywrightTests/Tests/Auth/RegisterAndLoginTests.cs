@@ -62,7 +62,6 @@ namespace PlaywrightTests.Tests.Auth
 
 
         }
-
         [Test, Order(3)]
         public async Task Login_WithInvalidPassword_ShouldShowError_AndNotLogin()
         {
@@ -85,11 +84,8 @@ namespace PlaywrightTests.Tests.Auth
         
         var errorText = await loginPage.GetErrorTextAsync();
         TestContext.Out.WriteLine($"🔎 Actual error text from site: '{errorText}'");
-
         Assert.That(errorText, Does.Contain("Login was unsuccessful"), "Expected unsuccessful login message.");
-        //StringAssert.Contains("Login was unsuccessful", errorText,"Expected unsuccessful login message.");
-
-
+        
         Assert.That(await loginPage.IsMyAccountVisibleAsync(), Is.False, "User should not be logged in when using a wrong password.");
         TestContext.Out.WriteLine("✅ Negative login check passed (error shown, no login).");
 
