@@ -7,6 +7,10 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/Status-In%20Progress-lightgrey)
 
+![Profile Views](https://komarev.com/ghpvc/?username=heba-art&color=blue)
+![GitHub Repo stars](https://img.shields.io/github/stars/heba-art/playwright-csharp-automation?style=social)
+![GitHub forks](https://img.shields.io/github/forks/heba-art/playwright-csharp-automation?style=social)
+
 End-to-end test automation project using **Playwright** with **C# (NUnit)**.  
 Target application: [nopCommerce Demo](https://demo.nopcommerce.com)
 
