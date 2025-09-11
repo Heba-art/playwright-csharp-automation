@@ -17,10 +17,10 @@ namespace PlaywrightTests.Pages
     public ILocator ProductTitles => _page.Locator(".product-item .product-title a");
 
     public async Task<bool> HasProductAsync(string productTitle)
-        {
-            var match = _page.Locator($".product-item .product-title a:has-text(\"{productTitle}\")").First;
-            return await match.IsVisibleAsync();
+    {
+        var match = _page.Locator($".product-item .product-title a:has-text(\"{productTitle}\")").First;
+        return await match.IsVisibleAsync();
 
-        }
+    }
     }
 }

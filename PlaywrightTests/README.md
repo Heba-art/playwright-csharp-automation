@@ -82,5 +82,7 @@ NUnit
 
 Visual Studio 2022
 
+![Profile Views](https://komarev.com/ghpvc/?username=heba-art&color=blue)
+
 👩‍💻 Author: Heba
 📌 Purpose: Professional portfolio project for Test Automation Engineer role

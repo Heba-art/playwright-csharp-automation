@@ -15,9 +15,11 @@ namespace PlaywrightTests.Pages
         private ILocator LoginLink => _page.Locator("a.ico-login");
         private ILocator SearchInput => _page.Locator("#small-searchterms");
         private ILocator SearchButton => _page.Locator("button.search-box-button");
+        private ILocator CartLink => _page.Locator("a.ico-cart");
         public async Task GoToAsync(string baseUrl) => await _page.GotoAsync(baseUrl);
         public async Task OpenRegisterAsync() => await RegisterLink.ClickAsync();
         public async Task OpenLoginAsync() => await LoginLink.ClickAsync();
+        public async Task OpenCartAsync() => await CartLink.ClickAsync();
 
         //Performs a search from the header and returns the search results page object
         public async Task<SearchResultsPage> SearchAsync(string query)
@@ -26,6 +28,7 @@ namespace PlaywrightTests.Pages
             await SearchButton.ClickAsync();
             return new SearchResultsPage(_page);
         }
+
 
     }
 }
