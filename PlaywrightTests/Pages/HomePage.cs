@@ -25,42 +25,47 @@ namespace PlaywrightTests.Pages
         public ILocator MobileMenu => _page.Locator(".menu-toggle, .mobile-menu-toggle, .responsive-nav-button");
 
 
+        // In your HomePage.cs file
+
         public async Task GoToAsync(string baseUrl)
         {
-
+            // 1. Navigate to the page with a reliable load strategy and long timeout.
             await _page.GotoAsync(baseUrl!, new()
             {
-                WaitUntil = WaitUntilState.Load, // Use 'Load' instead of 'NetworkIdle'
-                Timeout = 60_000                  // Set a specific 60-second timeout
+                WaitUntil = WaitUntilState.Load,
+                Timeout = 60_000
             });
 
-            // شريط الكوكيز (إن وجد): انتظر 1s ثم اضغط، بدون تحذير Obsolete
+            // 2. Defensively handle the cookie banner using your robust locator.
             var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
             try
             {
-                await cookieOk.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 1000 });
-                await cookieOk.ClickAsync();
+                // Directly try to click the button, waiting up to 2 seconds.
+                await cookieOk.ClickAsync(new() { Timeout = 2000 });
             }
             catch (TimeoutException)
             {
-                // لم يظهر زر الكوكيز خلال ثانية - تجاهل
+                // If the button isn't clickable within 2s, simply continue.
             }
 
-            // افتح قائمة الموبايل إذا لم يظهر زر Register خلال 1s
+            // 3. Cleverly handle mobile vs. desktop viewports.
             try
             {
+                // First, check for the link directly (for desktop view).
                 await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 1000 });
             }
             catch (PlaywrightException)
             {
+                // If it fails, assume it's a mobile view and click the hamburger menu.
                 if (await MobileMenu.IsVisibleAsync())
+                {
                     await MobileMenu.ClickAsync();
+                }
             }
 
-            // التأكيد النهائي يعتمد على DefaultTimeout المضبوط في TestBase
+            // 4. Perform the final, definitive assertion to ensure the page is ready.
             await Assertions.Expect(RegisterLink).ToBeVisibleAsync();
         }
-
         public async Task OpenLoginAsync()
         {
             await Expect(LoginLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
