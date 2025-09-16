@@ -14,6 +14,18 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+# credentials generated during tests
+lastUser_*.json
+
+# test outputs
+artifacts/
+
+# typical .NET build output (اختياري لكنه مفيد)
+bin/
+obj/
+TestResults/
+*.trx
+
 # Mono auto generated files
 mono_crash.*
 
