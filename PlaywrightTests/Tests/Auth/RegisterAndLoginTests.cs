@@ -2,19 +2,56 @@
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using PlaywrightTests.Pages;   
-using PlaywrightTests.Utils;   
+using PlaywrightTests.Utils; 
+
 
 namespace PlaywrightTests.Tests.Auth
 {
     [TestFixture]
     public class RegisterAndLoginTests : TestBase
     {
+        [OneTimeSetUp]
+        public async Task EnsureUserExists()
+        {
+            // Try to load last saved credentials; if present, we're done
+            var creds = CredentialStore.LoadAsync();
+            if (creds != null) return;
+
+            // Create a temporary context so we don't interfere with per-test contexts
+            var tempContext = await _browser.NewContextAsync(
+                new BrowserNewContextOptions { BaseURL = _baseUrl }
+            );
+
+            try
+            {
+                var tempPage = await tempContext.NewPageAsync();
+
+                var home = new HomePage(tempPage, _baseUrl);
+                await home.OpenRegisterAsync();
+
+                // Use your static Faker helper
+                var email = Faker.RandomEmail();
+                var pass = $"Qa!{DateTime.UtcNow:yyyyMMddHHmmss}a1";
+
+                var register = new RegisterPage(tempPage);
+                // Use the method you already use in TC1
+                await register.RegisterAsync(first: "Heba", last: "QA", email: email, pass: pass);
+
+                // Save credentials for login tests
+                await CredentialStore.SaveAsync(email, pass);
+            }
+            finally
+            {
+                await tempContext.CloseAsync();
+            }
+        }
+
         [Test, Order(1)]
         public async Task Register_HappyPath_ShowsSuccessAndLogsUserIn()
         {
 
             // Arrange
-            var home = new HomePage(_page);
+            var home = new HomePage(_page, _baseUrl);
             await home.GoToAsync(_baseUrl);
             // Print browser info
             await PrintBrowserInfoAsync();
@@ -48,7 +85,7 @@ namespace PlaywrightTests.Tests.Auth
             var creds = await CredentialStore.LoadAsync();
             Assert.That(creds, Is.Not.Null, "No saved credentials found. Run TC-001 (Register) first.");
 
-            var home = new HomePage(_page);
+            var home = new HomePage(_page, _baseUrl);
             await home.GoToAsync(_baseUrl);
             await home.OpenLoginAsync();
 
@@ -71,7 +108,7 @@ namespace PlaywrightTests.Tests.Auth
         //Intentionally wrong password
         var wrongPassword = creds!.Password + "XYZ";
 
-        var home = new HomePage(_page);
+        var home = new HomePage(_page,_baseUrl);
         await home.GoToAsync(_baseUrl);
         await home.OpenLoginAsync();
 

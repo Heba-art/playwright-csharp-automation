@@ -19,7 +19,7 @@ namespace PlaywrightTests.Tests.Catalog
         const string target = "Build your own computer";
 
         // Arrange – go to home
-        var home = new HomePage(_page);
+        var home = new HomePage(_page, _baseUrl);
         await home.GoToAsync(_baseUrl);
 
         //Act – search for exact product name

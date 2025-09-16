@@ -14,7 +14,7 @@ namespace PlaywrightTests.Tests.Catalog
             const string product = "Build your own computer";
 
             // Go to home and search exact match
-            var home = new HomePage(_page);
+            var home = new HomePage(_page,_baseUrl);
             await home.GoToAsync(_baseUrl);
 
             var resultsPage = await home.SearchAsync(product);
