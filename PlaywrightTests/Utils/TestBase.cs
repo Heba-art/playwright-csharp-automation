@@ -6,7 +6,8 @@ using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace PlaywrightTests.Utils
+// NOTE: This namespace should match your project structure.
+namespace PlaywrightTests
 {
     public class TestBase
     {
@@ -92,7 +93,6 @@ namespace PlaywrightTests.Utils
                 launchOptions.Args = new[] { "--no-sandbox" };
 
             _browser = await browserType.LaunchAsync(launchOptions);
-            // NOTE: context/page are created per test in [SetUp]
         }
 
         [SetUp]
@@ -107,6 +107,11 @@ namespace PlaywrightTests.Utils
 
             _page = await _context.NewPageAsync();
 
+            // --- MODIFICATION ---
+            // Navigate to the base URL here so every test starts on the home page.
+            await _page.GotoAsync(_baseUrl);
+
+            // Set default timeouts
             var defaultActionTimeout = 30_000;
             if (int.TryParse(Environment.GetEnvironmentVariable("PW_TIMEOUT"), out var fromEnv))
                 defaultActionTimeout = fromEnv;
@@ -116,11 +121,9 @@ namespace PlaywrightTests.Utils
 
             var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
             _page.SetDefaultNavigationTimeout(isCI ? Math.Max(defaultActionTimeout, 60_000)
-                                                   : Math.Max(defaultActionTimeout, 45_000));
+                                                  : Math.Max(defaultActionTimeout, 45_000));
 
             Microsoft.Playwright.Assertions.SetDefaultExpectTimeout(defaultActionTimeout);
-
-
 
             // Start tracing (great for CI debugging)
             await _context.Tracing.StartAsync(new()
@@ -134,12 +137,14 @@ namespace PlaywrightTests.Utils
         [TearDown]
         public async Task TearDownTest()
         {
+            // Create directories for artifacts if they don't exist
             Directory.CreateDirectory("artifacts/screenshots");
             Directory.CreateDirectory("artifacts/traces");
 
             var failed = TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed;
             var id = TestContext.CurrentContext.Test.ID;
 
+            // Take a screenshot on failure
             if (failed && _page is not null)
             {
                 await _page.ScreenshotAsync(new()
@@ -149,14 +154,14 @@ namespace PlaywrightTests.Utils
                 });
             }
 
-            // Stop tracing (save file only on failure)
+            // Stop tracing and save the file only on failure
             if (_context is not null)
             {
                 var tracePath = failed ? $"artifacts/traces/{id}.zip" : null;
                 await _context.Tracing.StopAsync(new() { Path = tracePath });
             }
 
-            // Close per-test context
+            // Close the per-test context
             if (_context is not null)
                 await _context.CloseAsync();
         }

@@ -20,7 +20,6 @@ namespace PlaywrightTests.Tests.Catalog
 
         // Arrange – go to home
         var home = new HomePage(_page, _baseUrl);
-        await home.GoToAsync(_baseUrl);
 
         //Act – search for exact product name
         var results = await home.SearchAsync(target);

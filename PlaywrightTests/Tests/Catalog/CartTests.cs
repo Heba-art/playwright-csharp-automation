@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using Microsoft.Playwright;
+using NUnit.Framework;
 using PlaywrightTests.Pages;
 using PlaywrightTests.Utils;
 using System.Threading.Tasks;
@@ -15,7 +16,6 @@ namespace PlaywrightTests.Tests.Catalog
 
             // Go to home and search exact match
             var home = new HomePage(_page,_baseUrl);
-            await home.GoToAsync(_baseUrl);
 
             var resultsPage = await home.SearchAsync(product);
 
@@ -41,6 +41,7 @@ namespace PlaywrightTests.Tests.Catalog
                 .ToHaveTextAsync(product);
 
             await productPage.AddToCartAsync();
+            await _page.Locator(".bar-notification.success").WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
             // Go to cart
             await home.OpenCartAsync();

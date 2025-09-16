@@ -12,38 +12,37 @@ namespace PlaywrightTests.Tests.Auth
         /// This runs ONCE before any tests in this class.
         /// Its job is to ensure a user exists for the login tests to use.
         /// It creates a user ONLY if one doesn't already exist from a previous run.
-        /// </summary>
-        [OneTimeSetUp]
-        public async Task FixtureSetup()
-        {
-            // Try to load credentials. If they exist, we don't need to create a new user.
-            var creds = await CredentialStore.LoadAsync();
-            if (creds != null)
-            {
-                TestContext.Out.WriteLine("✅ User credentials already exist. Skipping new user creation.");
-                return;
-            }
+        ///// </summary>
+        //[OneTimeSetUp]
+        //public async Task FixtureSetup()
+        //{
+        //    // Try to load credentials. If they exist, we don't need to create a new user.
+        //    var creds = await CredentialStore.LoadAsync();
+        //    if (creds != null)
+        //    {
+        //        TestContext.Out.WriteLine("✅ User credentials already exist. Skipping new user creation.");
+        //        return;
+        //    }
 
-            TestContext.Out.WriteLine("🔧 No existing credentials found. Creating a new user for this session...");
-            // Create a temporary, isolated browser context to register the user.
-            // This prevents interference with the contexts created for each test.
-            await using var tempContext = await _browser.NewContextAsync(new BrowserNewContextOptions { BaseURL = _baseUrl });
-            var tempPage = await tempContext.NewPageAsync();
+        //    TestContext.Out.WriteLine("🔧 No existing credentials found. Creating a new user for this session...");
+        //    // Create a temporary, isolated browser context to register the user.
+        //    // This prevents interference with the contexts created for each test.
+        //    await using var tempContext = await _browser.NewContextAsync(new BrowserNewContextOptions { BaseURL = _baseUrl });
+        //    var tempPage = await tempContext.NewPageAsync();
 
-            var home = new HomePage(tempPage, _baseUrl);
-            await home.GoToAsync(_baseUrl);
-            await home.OpenRegisterAsync();
+        //    var home = new HomePage(tempPage, _baseUrl);
+        //    await home.OpenRegisterAsync();
 
-            var email = Faker.RandomEmail();
-            var pass = "StrongPass!12345"; // Use a strong, fixed password
+        //    var email = Faker.RandomEmail();
+        //    var pass = "StrongPass!12345"; // Use a strong, fixed password
 
-            var registerPage = new RegisterPage(tempPage);
-            await registerPage.RegisterAsync("Fixture", "User", email, pass);
+        //    var registerPage = new RegisterPage(tempPage);
+        //    await registerPage.RegisterAsync("Fixture", "User", email, pass);
 
-            // IMPORTANT: This user is saved for the login tests below.
-            await CredentialStore.SaveAsync(email, pass);
-            TestContext.Out.WriteLine($"✅ Successfully created and saved user: {email}");
-        }
+        //    // IMPORTANT: This user is saved for the login tests below.
+        //    await CredentialStore.SaveAsync(email, pass);
+        //    TestContext.Out.WriteLine($"✅ Successfully created and saved user: {email}");
+        //}
 
         /// <summary>
         /// This test verifies the UI and flow of the registration process.
@@ -55,7 +54,6 @@ namespace PlaywrightTests.Tests.Auth
         {
             // Arrange
             var home = new HomePage(_page, _baseUrl);
-            await home.GoToAsync(_baseUrl);
             await home.OpenRegisterAsync();
 
             var registerPage = new RegisterPage(_page);
@@ -67,6 +65,7 @@ namespace PlaywrightTests.Tests.Auth
 
             // Assert – Ensure the success message appears and the user is logged in.
             await Assertions.Expect(registerPage.SuccessMessage).ToContainTextAsync("Your registration completed");
+            await CredentialStore.SaveAsync(email, password);
             await registerPage.ContinueAsync();
             await Assertions.Expect(_page.Locator("a.ico-account")).ToBeVisibleAsync();
 
@@ -85,7 +84,6 @@ namespace PlaywrightTests.Tests.Auth
             Assert.That(creds, Is.Not.Null, "Credentials could not be loaded. The OneTimeSetUp might have failed.");
 
             var home = new HomePage(_page, _baseUrl);
-            await home.GoToAsync(_baseUrl);
             await home.OpenLoginAsync();
 
             // Act
@@ -109,7 +107,6 @@ namespace PlaywrightTests.Tests.Auth
             var wrongPassword = creds!.Password + "XYZ";
 
             var home = new HomePage(_page, _baseUrl);
-            await home.GoToAsync(_baseUrl);
             await home.OpenLoginAsync();
 
             var loginPage = new LoginPage(_page);
