@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [ chromium ]   # أضيفي firefox, webkit لاحقًا لو رغبتِ
+        browser: [ chromium ]
 
     steps:
       - name: Checkout
@@ -21,10 +21,10 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
-          include-prerelease: true   # احذفي هذا السطر إذا كنتِ على إصدار GA مستقر
+          dotnet-version: '9.0.x'
+          # dotnet-quality: 'preview'  # فعّلها فقط إذا كنتِ على نسخة Preview من 9.0
 
-      - name: Show .NET info (diagnostic)
+      - name: Dotnet info
         run: dotnet --info
 
       - name: Restore
@@ -35,11 +35,10 @@ jobs:
         working-directory: PlaywrightTests
         run: dotnet build --configuration Release --no-restore
 
-      # نثبت المتصفحات عبر Node — يعمل بسلاسة على Ubuntu
       - name: Setup Node.js (for Playwright browsers)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -47,7 +46,7 @@ jobs:
       - name: Run tests (NUnit + Playwright)
         working-directory: PlaywrightTests
         env:
-          BROWSER: ${{ matrix.browser }}   # استخدميه في TestBase لو حابة تبدّلي المتصفح
+          BROWSER: ${{ matrix.browser }}
         run: |
           mkdir -p artifacts/traces artifacts/screenshots allure-results || true
           dotnet test PlaywrightTests.csproj \
@@ -56,7 +55,7 @@ jobs:
             --results-directory artifacts \
             --no-build
 
-      - name: Upload test artifacts
+      - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
