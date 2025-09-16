@@ -6,7 +6,7 @@
 ![Platform](https://img.shields.io/badge/Platform-nopCommerce%20Demo-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/Status-In%20Progress-lightgrey)
-[![CI](https://github.com/Heba-art/playwright-csharp-automation/actions/workflows/dotnet-playwright-ci.yaml/badge.svg?branch=main)](https://github.com/Heba-art/playwright-csharp-automation/actions/workflows/dotnet-playwright-ci.yaml)
+[![CI](https://github.com/Heba-art/playwright-csharp-automation/actions/workflows/dotnet-playwright-ci.yml/badge.svg?branch=main)](https://github.com/Heba-art/playwright-csharp-automation/actions/workflows/dotnet-playwright-ci.yml)
 
 
 
