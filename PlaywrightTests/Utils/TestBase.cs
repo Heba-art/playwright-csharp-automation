@@ -65,14 +65,32 @@ namespace PlaywrightTests.Utils
                  Height = _viewportHeight
              }
          });
+            //_page.SetDefaultTimeout(15000);
+            //_page.SetDefaultNavigationTimeout(20000);
             // Create a new page (tab) inside the context
-            _page = await _context.NewPageAsync(); 
+            _page = await _context.NewPageAsync();
+
+            //await _context.Tracing.StartAsync(new()
+            //{
+            //    Title = TestContext.CurrentContext.Test.Name, // لجلب اسم الاختبار تلقائيًا
+            //    Screenshots = true,
+            //    Snapshots = true,
+            //    Sources = true
+            //});
 
         }
 
         [TearDown]
         public async Task TearDown()
         {
+            //if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Failed)
+            //{
+            //    // سيتم حفظ الملف باسم "trace.zip" في مجلد bin/Debug
+            //    await _context.Tracing.StopAsync(new()
+            //    {
+            //        Path = "trace.zip"
+            //    });
+            //}
             // Close the context after each test
             await _context.CloseAsync();
         }
