@@ -16,26 +16,46 @@ namespace PlaywrightTests.Pages
         }
 
         // Header locators
-        public ILocator RegisterLink => _page.Locator("a.ico-register");
+        //public ILocator RegisterLink => _page.Locator("a.ico-register");
         public ILocator LoginLink => _page.Locator("a.ico-login");
         public ILocator SearchInput => _page.Locator("#small-searchterms");
         public ILocator SearchButton => _page.Locator("button.search-box-button");
         public ILocator CartLink => _page.Locator("a.ico-cart");
+        public ILocator RegisterLink => _page.Locator("a.ico-register, .header-links a[href*='register']");
+        public ILocator MobileMenu => _page.Locator(".menu-toggle, .mobile-menu-toggle, .responsive-nav-button");
 
-        /// <summary>Navigates to the site root using the context's BaseURL.</summary>
+
         public async Task GoToAsync(string baseUrl)
         {
-            // Avoid 'networkidle' on public sites; give more time in CI
-            await _page.GotoAsync(baseUrl, new()
-            {
-                WaitUntil = WaitUntilState.DOMContentLoaded,
-                Timeout = 60_000
-            });
+            await _page.GotoAsync(baseUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
 
-            // Wait for a stable, first-party UI element instead of network idle
-            await Microsoft.Playwright.Assertions.Expect(_page.Locator("a.ico-register"))
-                .ToBeVisibleAsync(new() { Timeout = 30_000 });
+            // شريط الكوكيز (إن وجد): انتظر 1s ثم اضغط، بدون تحذير Obsolete
+            var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
+            try
+            {
+                await cookieOk.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 1000 });
+                await cookieOk.ClickAsync();
+            }
+            catch (TimeoutException)
+            {
+                // لم يظهر زر الكوكيز خلال ثانية - تجاهل
+            }
+
+            // افتح قائمة الموبايل إذا لم يظهر زر Register خلال 1s
+            try
+            {
+                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 1000 });
+            }
+            catch (PlaywrightException)
+            {
+                if (await MobileMenu.IsVisibleAsync())
+                    await MobileMenu.ClickAsync();
+            }
+
+            // التأكيد النهائي يعتمد على DefaultTimeout المضبوط في TestBase
+            await Assertions.Expect(RegisterLink).ToBeVisibleAsync();
         }
+
         public async Task OpenLoginAsync()
         {
             await Expect(LoginLink).ToBeVisibleAsync(new() { Timeout = 10_000 });

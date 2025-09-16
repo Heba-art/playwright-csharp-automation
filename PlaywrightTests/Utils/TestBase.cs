@@ -110,11 +110,15 @@ namespace PlaywrightTests.Utils
             var defaultActionTimeout = 30_000;
             if (int.TryParse(Environment.GetEnvironmentVariable("PW_TIMEOUT"), out var fromEnv))
                 defaultActionTimeout = fromEnv;
+
             _context.SetDefaultTimeout(defaultActionTimeout);
+
+            _page = await _context.NewPageAsync();
             _page.SetDefaultTimeout(defaultActionTimeout);
+
             var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
             _page.SetDefaultNavigationTimeout(isCI ? 60_000 : 45_000);
-            _context.SetDefaultNavigationTimeout(isCI ? 60_000 : 45_000);
+
 
 
             // Start tracing (great for CI debugging)
