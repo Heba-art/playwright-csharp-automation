@@ -23,22 +23,32 @@ Target application: [nopCommerce Demo](https://demo.nopcommerce.com)
 ```
 PlaywrightTests/
 │
-├── 📁 Pages/
-│ ├── 📄 HomePage.cs # Represents the Home Page. Contains selectors and methods for interacting with elements (e.g., search bar, navigation links).
-│ ├── 📄 LoginPage.cs # Represents the Login Page. Handles interactions like filling username/password fields and clicking the submit button.
-│ └── 📄 RegisterPage.cs # Represents the User Registration Page. Manages form filling and submission logic.
+├── 📁 Pages/                         # Page Object Models (POM)
+│   ├── 📄 CartPage.cs                # Cart page interactions (view items, totals, update/remove).
+│   ├── 📄 HomePage.cs                # Home page actions (navigate, search, menus).
+│   ├── 📄 LoginPage.cs               # Login page (username, password, submit).
+│   ├── 📄 ProductPage.cs             # Product details page (add to cart, select options).
+│   ├── 📄 RegisterPage.cs            # User registration page.
+│   └── 📄 SearchResultsPage.cs       # Search results listing page.
 │
-├── 📁 Tests/
-│ └── 📁 Auth/
-│ └── 📄 RegisterAndLoginTests.cs # Contains the actual test methods ([Test]). Uses Page Objects + NUnit assertions for registration/login scenarios.
+├── 📁 Tests/                         # Test Suites organized by feature
+│   ├── 📁 Auth/
+│   │   └── 📄 RegisterAndLoginTests.cs 
+│   │                                 # Tests for user registration & login flows.
+│   │
+│   └── 📁 Catalog/
+│       ├── 📄 CartTests.cs           # Tests for adding/removing products from cart, price checks.
+│       └── 📄 SearchTests.cs         # Tests for product search and results validation.
 │
-├── 📁 Utils/
-│ ├── 📄 Faker.cs # Helper class for generating random test data (unique emails, strong passwords).
-│ └── 📄 TestBase.cs # Base class for setup/teardown (launching browser, new page context, closing browser).
+├── 📁 Utils/                         # Shared utilities & helpers
+│   ├── 📄 CredentialStore.cs         # Handles test credentials (safe storage for login data).
+│   ├── 📄 Faker.cs                   # Generates random test data (emails, usernames, passwords).
+│   └── 📄 TestBase.cs                # Common setup/teardown (browser, context, page).
 │
-├── 📄 appsettings.json # Config file (baseUrl, browser, environment details).
+├── 📄 appsettings.json               # Config (baseUrl, browser, environment details).
 │
-└── 📄 README.md # Project documentation (purpose, setup, run instructions).
+└── 📄 README.md                      # Documentation (setup, run instructions, project details).
+
 ```
 ---
 

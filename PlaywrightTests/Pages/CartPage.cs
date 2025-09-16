@@ -45,7 +45,7 @@ namespace PlaywrightTests.Pages
             return int.Parse(val);
         }
 
-        // Parse price from string (e.g., "$1,200.00" to 1200.00)
+        // Parse price from string (e.g., "$1,250.00" to 1250.00)
         public static decimal ParsePrice(string price)
         {
             var cleaned = System.Text.RegularExpressions.Regex.Replace(price ?? "", @"[^\d\.\-]", "");
