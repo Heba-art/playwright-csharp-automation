@@ -28,17 +28,17 @@ namespace PlaywrightTests.Pages
         // In your HomePage.cs file
 
         // In your HomePage.cs file
+        // In your HomePage.cs file
 
         public async Task GoToAsync(string baseUrl)
         {
-            // 1. Navigate to the page with a reliable load strategy and long timeout.
+            // 1. Navigate to the page and handle cookies (unchanged).
             await _page.GotoAsync(baseUrl!, new()
             {
                 WaitUntil = WaitUntilState.Load,
                 Timeout = 60_000
             });
 
-            // 2. Defensively handle the cookie banner.
             var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
             try
             {
@@ -49,28 +49,22 @@ namespace PlaywrightTests.Pages
                 // Ignore if the button doesn't appear.
             }
 
-            // 3. Cleverly handle mobile vs. desktop viewports.
-            try
-            {
-                // Quick check to see the link (for desktop view).
-                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 1000 });
-            }
-            catch (PlaywrightException)
-            {
-                // If it fails, assume it's a mobile view and click the menu.
-                if (await MobileMenu.IsVisibleAsync())
-                {
-                    await MobileMenu.ClickAsync();
+            // 2. New, simplified logic to ensure the link is visible.
+            // First, quietly check if the link is already visible (takes 1s max).
+            var isLinkVisible = await RegisterLink.IsVisibleAsync(new() { Timeout = 1000 });
 
-                    // --- This is the new and important line ---
-                    // Wait here for the link to appear after opening the menu.
-                    await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 5000 });
-                }
+            // If it's not visible, we're likely in mobile view.
+            if (!isLinkVisible && await MobileMenu.IsVisibleAsync())
+            {
+                // Click the menu to reveal the links.
+                await MobileMenu.ClickAsync();
             }
 
-            // 4. The final, definitive assertion (now it will always work).
-            await Assertions.Expect(RegisterLink).ToBeVisibleAsync();
+            // 3. The final and only assertion.
+            // Give it a long timeout (15 seconds) to be robust against any network slowness or page animations.
+            await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
         }
+        
         public async Task OpenLoginAsync()
         {
             await Expect(LoginLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
