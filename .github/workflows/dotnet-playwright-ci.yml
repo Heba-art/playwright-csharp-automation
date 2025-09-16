@@ -1,0 +1,47 @@
+name: .NET Playwright CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]   # ممكن تزودي: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Install Playwright browsers
+        shell: pwsh
+        run: ./bin/Release/net9.0/playwright.ps1 install --with-deps
+
+      - name: Test
+        env:
+          HEADLESS: "true"
+          BROWSER: ${{ matrix.browser }}
+        run: dotnet test -c Release --logger "trx;LogFileName=test_results.trx" --results-directory artifacts
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.browser }}
+          path: artifacts
