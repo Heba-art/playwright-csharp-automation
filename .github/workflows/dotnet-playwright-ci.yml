@@ -12,20 +12,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [ chromium ]
-
-    env:
-      DOTNET_NOLOGO: true
-      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+        browser: [ chromium ]   # أضيفي firefox, webkit لاحقًا لو رغبتِ
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8
+      - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "9.0.x"
+          include-prerelease: true   # احذفي هذا السطر إذا كنتِ على إصدار GA مستقر
+
+      - name: Show .NET info (diagnostic)
+        run: dotnet --info
 
       - name: Restore
         working-directory: PlaywrightTests
@@ -35,21 +35,19 @@ jobs:
         working-directory: PlaywrightTests
         run: dotnet build --configuration Release --no-restore
 
-      # تثبيت متصفحات Playwright على Ubuntu عبر playwright.sh
-      - name: Install Playwright browsers
-        run: |
-          set -eux
-          dotnet build PlaywrightTests/PlaywrightTests.csproj -c Release --no-restore
-          script_path=$(find PlaywrightTests -type f -name "playwright.sh" | head -n 1)
-          if [ -z "$script_path" ]; then
-            echo "playwright.sh not found"; exit 1
-          fi
-          bash "$script_path" install --with-deps
+      # نثبت المتصفحات عبر Node — يعمل بسلاسة على Ubuntu
+      - name: Setup Node.js (for Playwright browsers)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-      - name: Run tests
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run tests (NUnit + Playwright)
         working-directory: PlaywrightTests
         env:
-          BROWSER: ${{ matrix.browser }}
+          BROWSER: ${{ matrix.browser }}   # استخدميه في TestBase لو حابة تبدّلي المتصفح
         run: |
           mkdir -p artifacts/traces artifacts/screenshots allure-results || true
           dotnet test PlaywrightTests.csproj \
@@ -58,7 +56,7 @@ jobs:
             --results-directory artifacts \
             --no-build
 
-      - name: Upload artifacts
+      - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
