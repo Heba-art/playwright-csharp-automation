@@ -27,8 +27,12 @@ namespace PlaywrightTests.Pages
 
         public async Task GoToAsync(string baseUrl)
         {
-            
-            await _page.GotoAsync(baseUrl!, new() { WaitUntil = WaitUntilState.NetworkIdle });
+
+            await _page.GotoAsync(baseUrl!, new()
+            {
+                WaitUntil = WaitUntilState.Load, // Use 'Load' instead of 'NetworkIdle'
+                Timeout = 60_000                  // Set a specific 60-second timeout
+            });
 
             // شريط الكوكيز (إن وجد): انتظر 1s ثم اضغط، بدون تحذير Obsolete
             var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
