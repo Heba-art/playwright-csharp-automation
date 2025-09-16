@@ -23,6 +23,9 @@ namespace PlaywrightTests
         private int _viewportWidth = 1366;
         private int _viewportHeight = 768;
 
+        private ILocator RegisterLink => _page.Locator("a.ico-register");
+        private ILocator MobileMenu => _page.Locator(".menu-toggle");
+
         [OneTimeSetUp]
         public async Task GlobalSetup()
         {
@@ -110,6 +113,7 @@ namespace PlaywrightTests
             // --- MODIFICATION ---
             // Navigate to the base URL here so every test starts on the home page.
             await _page.GotoAsync(_baseUrl);
+            await EnsurePageReadyAsync();
 
             // Set default timeouts
             var defaultActionTimeout = 30_000;
@@ -132,6 +136,34 @@ namespace PlaywrightTests
                 Snapshots = true,
                 Sources = true
             });
+        }
+        protected async Task EnsurePageReadyAsync()
+        {
+            // 1. Defensively handle the cookie banner.
+            var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
+            try
+            {
+                await cookieOk.ClickAsync(new() { Timeout = 2000 });
+            }
+            catch (TimeoutException) { /* Ignore if the button doesn't appear */ }
+
+            // 2. Cleverly handle mobile vs. desktop viewports.
+            try
+            {
+                // Quick check to see the link (for desktop view).
+                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 1000 });
+            }
+            catch (PlaywrightException)
+            {
+                // If it fails, assume it's a mobile view and click the menu.
+                if (await MobileMenu.IsVisibleAsync())
+                {
+                    await MobileMenu.ClickAsync();
+                }
+            }
+
+            // 3. The final assertion to ensure the link is now visible.
+            await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
         }
 
         [TearDown]

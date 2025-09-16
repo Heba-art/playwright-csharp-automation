@@ -21,8 +21,9 @@ namespace PlaywrightTests.Pages
         public ILocator SearchInput => _page.Locator("#small-searchterms");
         public ILocator SearchButton => _page.Locator("button.search-box-button");
         public ILocator CartLink => _page.Locator("a.ico-cart");
+        private ILocator MobileMenu => _page.Locator(".menu-toggle");
         //public ILocator RegisterLink => _page.Locator("a.ico-register, .header-links a[href*='register']");
-        public ILocator MobileMenu => _page.Locator(".menu-toggle, .mobile-menu-toggle, .responsive-nav-button");
+        //public ILocator MobileMenu => _page.Locator(".menu-toggle, .mobile-menu-toggle, .responsive-nav-button");
 
 
         // In your HomePage.cs file
@@ -64,7 +65,7 @@ namespace PlaywrightTests.Pages
         //    // Give it a long timeout (15 seconds) to be robust against any network slowness or page animations.
         //    await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 15_000 });
         //}
-        
+
         public async Task OpenLoginAsync()
         {
             await Expect(LoginLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
