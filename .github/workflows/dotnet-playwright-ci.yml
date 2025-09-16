@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [ chromium ]
+        browser: [ chromium ]   # add firefox, webkit later if you like
 
     steps:
       - name: Checkout
@@ -21,8 +21,8 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
-          # dotnet-quality: 'preview'  # فعّلها فقط إذا كنتِ على نسخة Preview من 9.0
+          dotnet-version: "9.0.x"
+          # dotnet-quality: "preview"   # uncomment only if you target a preview SDK
 
       - name: Dotnet info
         run: dotnet --info
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node.js (for Playwright browsers)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
@@ -47,11 +47,14 @@ jobs:
         working-directory: PlaywrightTests
         env:
           BROWSER: ${{ matrix.browser }}
+          HEADLESS: "true"           # force headless on CI
+          # BASE_URL: ${{ secrets.BASE_URL }}   # optional: provide via repo secrets
         run: |
           mkdir -p artifacts/traces artifacts/screenshots allure-results || true
           dotnet test PlaywrightTests.csproj \
             --configuration Release \
             --logger "trx;LogFileName=test_results.trx" \
+            --logger "console;verbosity=detailed" \
             --results-directory artifacts \
             --no-build
 
@@ -64,3 +67,11 @@ jobs:
             PlaywrightTests/artifacts/**
             PlaywrightTests/allure-results/**
           if-no-files-found: ignore
+
+      - name: Publish TRX summary
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: NUnit Results
+          path: PlaywrightTests/artifacts/*.trx
+          reporter: dotnet-trx
