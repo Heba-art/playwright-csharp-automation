@@ -112,12 +112,13 @@ namespace PlaywrightTests.Utils
                 defaultActionTimeout = fromEnv;
 
             _context.SetDefaultTimeout(defaultActionTimeout);
-
-            _page = await _context.NewPageAsync();
             _page.SetDefaultTimeout(defaultActionTimeout);
 
             var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
-            _page.SetDefaultNavigationTimeout(isCI ? 60_000 : 45_000);
+            _page.SetDefaultNavigationTimeout(isCI ? Math.Max(defaultActionTimeout, 60_000)
+                                                   : Math.Max(defaultActionTimeout, 45_000));
+
+            Microsoft.Playwright.Assertions.SetDefaultExpectTimeout(defaultActionTimeout);
 
 
 
