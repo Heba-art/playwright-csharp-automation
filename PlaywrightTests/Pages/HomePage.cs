@@ -27,6 +27,8 @@ namespace PlaywrightTests.Pages
 
         // In your HomePage.cs file
 
+        // In your HomePage.cs file
+
         public async Task GoToAsync(string baseUrl)
         {
             // 1. Navigate to the page with a reliable load strategy and long timeout.
@@ -36,34 +38,37 @@ namespace PlaywrightTests.Pages
                 Timeout = 60_000
             });
 
-            // 2. Defensively handle the cookie banner using your robust locator.
+            // 2. Defensively handle the cookie banner.
             var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
             try
             {
-                // Directly try to click the button, waiting up to 2 seconds.
                 await cookieOk.ClickAsync(new() { Timeout = 2000 });
             }
             catch (TimeoutException)
             {
-                // If the button isn't clickable within 2s, simply continue.
+                // Ignore if the button doesn't appear.
             }
 
             // 3. Cleverly handle mobile vs. desktop viewports.
             try
             {
-                // First, check for the link directly (for desktop view).
+                // Quick check to see the link (for desktop view).
                 await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 1000 });
             }
             catch (PlaywrightException)
             {
-                // If it fails, assume it's a mobile view and click the hamburger menu.
+                // If it fails, assume it's a mobile view and click the menu.
                 if (await MobileMenu.IsVisibleAsync())
                 {
                     await MobileMenu.ClickAsync();
+
+                    // --- This is the new and important line ---
+                    // Wait here for the link to appear after opening the menu.
+                    await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 5000 });
                 }
             }
 
-            // 4. Perform the final, definitive assertion to ensure the page is ready.
+            // 4. The final, definitive assertion (now it will always work).
             await Assertions.Expect(RegisterLink).ToBeVisibleAsync();
         }
         public async Task OpenLoginAsync()
@@ -96,12 +101,6 @@ namespace PlaywrightTests.Pages
             await box.PressAsync("Enter");
             return new SearchResultsPage(_page);
 
-            // If you later need a page object return:
-            // public async Task<SearchResultsPage> SearchAsync(string query)
-            // {
-            //     await SearchAsync(query);
-            //     return new SearchResultsPage(_page);
-            // }
         }
     }
 }
