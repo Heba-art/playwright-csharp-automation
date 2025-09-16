@@ -25,12 +25,16 @@ namespace PlaywrightTests.Pages
         /// <summary>Navigates to the site root using the context's BaseURL.</summary>
         public async Task GoToAsync(string baseUrl)
         {
-            await _page.GotoAsync(baseUrl, new() { WaitUntil = WaitUntilState.NetworkIdle });
+            // Avoid 'networkidle' on public sites; give more time in CI
+            await _page.GotoAsync(baseUrl, new()
+            {
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 60_000
+            });
 
-            // لو فيه بانر كوكيز، اقفله (بدون خيارات Obsolete)
-            var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, button:has-text(\"OK\")");
-            if (await cookieOk.IsVisibleAsync())
-                await cookieOk.ClickAsync();
+            // Wait for a stable, first-party UI element instead of network idle
+            await Microsoft.Playwright.Assertions.Expect(_page.Locator("a.ico-register"))
+                .ToBeVisibleAsync(new() { Timeout = 30_000 });
         }
         public async Task OpenLoginAsync()
         {

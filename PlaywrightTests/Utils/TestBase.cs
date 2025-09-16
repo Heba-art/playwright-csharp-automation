@@ -107,13 +107,15 @@ namespace PlaywrightTests.Utils
 
             _page = await _context.NewPageAsync();
 
-            // Increase timeouts on CI
-            //var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
-            //_page.SetDefaultTimeout(isCI ? 10000 : 5000);
+            var defaultActionTimeout = 30_000;
+            if (int.TryParse(Environment.GetEnvironmentVariable("PW_TIMEOUT"), out var fromEnv))
+                defaultActionTimeout = fromEnv;
+            _context.SetDefaultTimeout(defaultActionTimeout);
+            _page.SetDefaultTimeout(defaultActionTimeout);
             var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
-            var timeoutEnv = Environment.GetEnvironmentVariable("PW_TIMEOUT");
-            int timeout = int.TryParse(timeoutEnv, out var t) ? t : (isCI ? 10000 : 10000); // 10s 
-            _page.SetDefaultTimeout(timeout);
+            _page.SetDefaultNavigationTimeout(isCI ? 60_000 : 45_000);
+            _context.SetDefaultNavigationTimeout(isCI ? 60_000 : 45_000);
+
 
             // Start tracing (great for CI debugging)
             await _context.Tracing.StartAsync(new()
