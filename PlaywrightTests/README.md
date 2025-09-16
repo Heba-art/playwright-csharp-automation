@@ -6,6 +6,8 @@
 ![Platform](https://img.shields.io/badge/Platform-nopCommerce%20Demo-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/Status-In%20Progress-lightgrey)
+[![CI](https://github.com/Heba-art/playwright-csharp-automation/actions/workflows/dotnet-playwright-ci.yml/badge.svg)](https://github.com/Heba-art/playwright-csharp-automation/actions/workflows/dotnet-playwright-ci.yml)
+
 
 
 ![Profile Views](https://komarev.com/ghpvc/?username=heba-art&color=blue)
