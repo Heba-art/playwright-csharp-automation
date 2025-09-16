@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [ chromium ]   # add firefox, webkit later if you like
+        browser: [chromium]   # ممكن تزودي: [chromium, firefox, webkit]
 
     steps:
       - name: Checkout
@@ -21,57 +21,27 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "9.0.x"
-          # dotnet-quality: "preview"   # uncomment only if you target a preview SDK
-
-      - name: Dotnet info
-        run: dotnet --info
+          dotnet-version: '9.0.x'
 
       - name: Restore
-        working-directory: PlaywrightTests
         run: dotnet restore
 
-      - name: Build (Release)
-        working-directory: PlaywrightTests
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Setup Node.js (for Playwright browsers)
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+      - name: Build
+        run: dotnet build -c Release --no-restore
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+        shell: pwsh
+        run: ./bin/Release/net9.0/playwright.ps1 install --with-deps
 
-      - name: Run tests (NUnit + Playwright)
-        working-directory: PlaywrightTests
+      - name: Test
         env:
+          HEADLESS: "true"
           BROWSER: ${{ matrix.browser }}
-          HEADLESS: "true"           # force headless on CI
-          # BASE_URL: ${{ secrets.BASE_URL }}   # optional: provide via repo secrets
-        run: |
-          mkdir -p artifacts/traces artifacts/screenshots allure-results || true
-          dotnet test PlaywrightTests.csproj \
-            --configuration Release \
-            --logger "trx;LogFileName=test_results.trx" \
-            --logger "console;verbosity=detailed" \
-            --results-directory artifacts \
-            --no-build
+        run: dotnet test -c Release --logger "trx;LogFileName=test_results.trx" --results-directory artifacts
 
-      - name: Upload artifacts
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts-${{ matrix.browser }}
-          path: |
-            PlaywrightTests/artifacts/**
-            PlaywrightTests/allure-results/**
-          if-no-files-found: ignore
-
-      - name: Publish TRX summary
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: NUnit Results
-          path: PlaywrightTests/artifacts/*.trx
-          reporter: dotnet-trx
+          name: test-results-${{ matrix.browser }}
+          path: artifacts
