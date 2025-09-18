@@ -3,12 +3,9 @@ using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using System;
 using System.IO;
-using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
-// NOTE: This namespace should match your project structure.
 namespace PlaywrightTests
 {
     public class TestBase
@@ -18,7 +15,7 @@ namespace PlaywrightTests
         protected IBrowserContext _context = default!;
         protected IPage _page = default!;
 
-        // Defaults (can be overridden by appsettings.json or ENV)
+        // Defaults (قابلة للتهيئة من appsettings.json أو ENV)
         protected string _baseUrl = "https://demo.nopcommerce.com";
         private string _browserType = "chromium";
         private bool _headless = true;
@@ -29,10 +26,11 @@ namespace PlaywrightTests
         private ILocator MobileMenu => _page.Locator(".menu-toggle");
         private ILocator HeaderMenu => _page.Locator(".header-menu");
 
+        // ========================= OneTimeSetUp =========================
         [OneTimeSetUp]
-        public async Task GlobalSetup()
+        public async Task GlobalSetUp()
         {
-            // ---------- Read appsettings.json if present ----------
+            // ---- Read appsettings.json (اختياري) ----
             var configPath = File.Exists("appsettings.json")
                 ? "appsettings.json"
                 : Path.Combine(AppContext.BaseDirectory, "appsettings.json");
@@ -59,26 +57,24 @@ namespace PlaywrightTests
                 }
             }
 
-            // ---------- ENV overrides (CI-friendly) ----------
+            // ---- ENV overrides (CI-friendly) ----
             var envBrowser = Environment.GetEnvironmentVariable("BROWSER");
-            if (!string.IsNullOrWhiteSpace(envBrowser))
-                _browserType = envBrowser;
+            if (!string.IsNullOrWhiteSpace(envBrowser)) _browserType = envBrowser;
 
             var envBaseUrl = Environment.GetEnvironmentVariable("BASE_URL");
-            if (!string.IsNullOrWhiteSpace(envBaseUrl))
-                _baseUrl = envBaseUrl;
+            if (!string.IsNullOrWhiteSpace(envBaseUrl)) _baseUrl = envBaseUrl;
 
             var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
             var envHeadless = Environment.GetEnvironmentVariable("HEADLESS");
             var resolvedHeadless = envHeadless switch
             {
-                null when isCI => true, // force headless on CI if not explicitly set
+                null when isCI => true,                     // على CI شغّل headless افتراضيًا
                 null => _headless,
                 _ => envHeadless.Equals("1", StringComparison.OrdinalIgnoreCase) ||
                      envHeadless.Equals("true", StringComparison.OrdinalIgnoreCase)
             };
 
-            // ---------- Playwright startup ----------
+            // ---- Playwright startup ----
             _playwright = await Playwright.CreateAsync();
 
             var typeLower = (_browserType ?? "chromium").ToLowerInvariant();
@@ -94,23 +90,24 @@ namespace PlaywrightTests
                 Headless = resolvedHeadless
             };
 
-            // Helpful flags on Linux runners
-            if (OperatingSystem.IsLinux() && (typeLower == "chromium" || typeLower == "firefox"))
+            // Helpful flags على Linux runners
+            if (OperatingSystem.IsLinux() && (typeLower is "chromium" or "firefox"))
                 launchOptions.Args = new[] { "--no-sandbox" };
 
             _browser = await browserType.LaunchAsync(launchOptions);
         }
 
+        // ============================ SetUp =============================
         [SetUp]
         public async Task SetUpTest()
         {
-            // New isolated context for each test
             _context = await _browser.NewContextAsync(new BrowserNewContextOptions
             {
                 BaseURL = _baseUrl,
                 ViewportSize = new ViewportSize { Width = _viewportWidth, Height = _viewportHeight }
             });
-            // Start tracing (great for CI debugging)
+
+            // ابدأ tracing لكل اختبار (يُحفظ عند الفشل فقط)
             await _context.Tracing.StartAsync(new()
             {
                 Screenshots = true,
@@ -120,12 +117,11 @@ namespace PlaywrightTests
 
             _page = await _context.NewPageAsync();
 
-            // --- MODIFICATION ---
-            // Navigate to the base URL here so every test starts on the home page.
-            await _page.GotoAsync(_baseUrl);
+            // افتح الصفحة وضمن جاهزيتها (نسخة آمنة للـ CI)
+            await _page.GotoAsync(_baseUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
             await EnsurePageReadyAsync();
 
-            // Set default timeouts
+            // التوقيتات الافتراضية (قابلة للتهيئة بالمتغير PW_TIMEOUT)
             var defaultActionTimeout = 60_000;
             if (int.TryParse(Environment.GetEnvironmentVariable("PW_TIMEOUT"), out var fromEnv))
                 defaultActionTimeout = fromEnv;
@@ -135,42 +131,46 @@ namespace PlaywrightTests
 
             var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
             _page.SetDefaultNavigationTimeout(isCI ? Math.Max(defaultActionTimeout, 60_000)
-                                                  : Math.Max(defaultActionTimeout, 45_000));
+                                                   : Math.Max(defaultActionTimeout, 45_000));
 
             Microsoft.Playwright.Assertions.SetDefaultExpectTimeout(defaultActionTimeout);
-
-
         }
 
+        // ======================= EnsurePageReady ========================
         public async Task EnsurePageReadyAsync()
         {
-            // 1) افتحي الصفحة + انتظري استقرار الشبكة
-            await _page.GotoAsync(_baseUrl, new()
+            var isCI = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
+
+            // تجنّب NetworkIdle في CI لأن مواقع الديمو قد لا تصل إليه
+            if (isCI)
             {
-                WaitUntil = WaitUntilState.DOMContentLoaded,
-                Timeout = 60000
-            });
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                try
+                {
+                    await _page.WaitForLoadStateAsync(LoadState.Load, new() { Timeout = 15000 });
+                }
+                catch { /* تجاهل */ }
+                await _page.WaitForTimeoutAsync(300);
+            }
+            else
+            {
+                try
+                {
+                    await _page.WaitForLoadStateAsync(LoadState.NetworkIdle, new() { Timeout = 5000 });
+                }
+                catch { /* لا مشكلة لو لم يصل للـ idle */ }
+            }
 
-            // 2) اقبلي الكوكيز إن وُجدت
             await AcceptCookiesIfPresentAsync();
-
-            // 3) اغلقي أي شريط إشعار قد يغطي العناصر
             await DismissNotificationBarIfPresentAsync();
 
-            // 4) تحقّق جاهزية الصفحة عبر عنصر موثوق (بديل .header-menu)
+            // عنصر جاهزية موثوق بدل .header-menu
             var readyAnchor = _page.Locator(".header-logo a, a.ico-cart").First;
-            await Assertions.Expect(readyAnchor).ToBeVisibleAsync(new()
-            {
-                Timeout = 60000
-            });
+            await Assertions.Expect(readyAnchor).ToBeVisibleAsync(new() { Timeout = 30000 });
         }
 
         private async Task AcceptCookiesIfPresentAsync()
         {
-            // أزرار شائعة في الديمو
             var cookieBtn = _page.Locator("#eu-cookie-ok, .cookie-bar button, text=I agree").First;
-
             if (await IsQuicklyVisibleAsync(cookieBtn, 1000))
             {
                 await cookieBtn.ClickAsync();
@@ -187,94 +187,89 @@ namespace PlaywrightTests
                 if (await IsQuicklyVisibleAsync(close, 500))
                     await close.ClickAsync();
 
-                await bar.WaitForAsync(new()
-                {
-                    State = WaitForSelectorState.Hidden,
-                    Timeout = 5000
-                });
+                await bar.WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 5000 });
             }
         }
 
-        // Helper بدون أي API قديم/مهجور
         private static async Task<bool> IsQuicklyVisibleAsync(ILocator locator, int timeoutMs = 800)
         {
             try
             {
-                await locator.WaitForAsync(new()
-                {
-                    State = WaitForSelectorState.Visible,
-                    Timeout = timeoutMs
-                });
+                await locator.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = timeoutMs });
                 return true;
             }
             catch (TimeoutException) { return false; }
             catch (PlaywrightException) { return false; }
         }
 
-
+        // ============================ TearDown ==========================
         [TearDown]
-        public async Task TearDownTest()
-        {// --- تعديل مهم: منطق جديد وموثوق لحفظ الآثار ---
-            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
-            {
-                var testId = TestContext.CurrentContext.Test.ID;
-                var screenshotPath = Path.Combine("artifacts", "screenshots", $"{testId}.png");
-                Directory.CreateDirectory(Path.GetDirectoryName(screenshotPath)!);
-                await _page.ScreenshotAsync(new() { Path = screenshotPath, FullPage = true });
-                TestContext.AddTestAttachment(screenshotPath, "Screenshot on failure");
-            }
+        public async Task AfterEach()
+        {
+            var failed = TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed;
 
-            // ضع إيقاف التتبع في try-catch لتجنب الخطأ
+            // paths متوافقة مع الـ workflow (يرفع PlaywrightTests/artifacts/**)
+            var artifactsRoot = Path.Combine("PlaywrightTests", "artifacts");
+            var screenshotsDir = Path.Combine(artifactsRoot, "screenshots");
+            var tracesDir = Path.Combine(artifactsRoot, "traces");
+            Directory.CreateDirectory(screenshotsDir);
+            Directory.CreateDirectory(tracesDir);
+
             try
             {
-                var tracePath = Path.Combine("artifacts", "traces", $"{TestContext.CurrentContext.Test.ID}.zip");
-                if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
+                if (failed)
                 {
+                    var safeName = Sanitize(TestContext.CurrentContext.Test.Name);
+                    var shotPath = Path.Combine(screenshotsDir, $"{safeName}.png");
+                    var tracePath = Path.Combine(tracesDir, $"{safeName}.zip");
+
+                    await _page.ScreenshotAsync(new() { Path = shotPath, FullPage = true });
+                    TestContext.AddTestAttachment(shotPath, "Screenshot on failure");
+
                     await _context.Tracing.StopAsync(new() { Path = tracePath });
                     TestContext.AddTestAttachment(tracePath, "Playwright Trace on failure");
                 }
                 else
                 {
-                    await _context.Tracing.StopAsync(); // أوقف التتبع بدون حفظ الملف
+                    await _context.Tracing.StopAsync(); // أوقف التتبع بدون حفظ
                 }
             }
             catch (Exception ex)
             {
-                TestContext.Out.WriteLine($"Could not stop tracing: {ex.Message}");
+                TestContext.Out.WriteLine($"[TRACE/SHOT] note: {ex.Message}");
             }
 
             await _context.CloseAsync();
         }
 
+        // ========================= OneTimeTearDown ======================
         [OneTimeTearDown]
         public async Task GlobalTeardown()
         {
-            if (_browser is not null)
-                await _browser.CloseAsync();
-
+            if (_browser is not null) await _browser.CloseAsync();
             _playwright?.Dispose();
 
-            // Optional: cleanup any temp credentials created during tests
+            // تنظيف أي ملفات مؤقتة باسم lastUser_*.json
             var dir = TestContext.CurrentContext.WorkDirectory;
             foreach (var file in Directory.GetFiles(dir, "lastUser_*.json"))
             {
-                try
-                {
-                    File.Delete(file);
-                    TestContext.Out.WriteLine($"[CLEANUP] Deleted {Path.GetFileName(file)}");
-                }
-                catch (Exception ex)
-                {
-                    TestContext.Out.WriteLine($"[CLEANUP-ERROR] {ex.Message}");
-                }
+                try { File.Delete(file); }
+                catch (Exception ex) { TestContext.Out.WriteLine($"[CLEANUP-ERROR] {ex.Message}"); }
             }
         }
 
-        // Optional utility
+        // ============================== Utils ===========================
         protected async Task PrintBrowserInfoAsync()
         {
             var ua = await _page.EvaluateAsync<string>("navigator.userAgent");
             TestContext.Out.WriteLine($"[INFO] UA: {ua}");
+        }
+
+        private static string Sanitize(string name)
+        {
+            foreach (var c in Path.GetInvalidFileNameChars())
+                name = name.Replace(c, '_');
+            return name;
         }
     }
 }
