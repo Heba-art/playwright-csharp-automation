@@ -141,48 +141,78 @@ namespace PlaywrightTests
 
 
         }
-        protected async Task EnsurePageReadyAsync()
+
+    public async Task EnsurePageReadyAsync()
+    {
+        // 1) افتحي الصفحة + انتظري استقرار الشبكة
+        await _page.GotoAsync(_baseUrl, new()
         {
-            try
-            {
-                // Step 1: Defensively handle the cookie banner.
-                var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
-                try
-                {
-                    await cookieOk.ClickAsync(new() { Timeout = 3000 });
-                }
-                catch (TimeoutException) { /* Ignore if the button doesn't appear */ }
+            WaitUntil = WaitUntilState.DOMContentLoaded,
+            Timeout = 60000
+        });
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-                // Step 2: Simplified logic to handle mobile view.
-                // First, do a quick check to see if the link is already visible.
-                var isLinkVisible = await RegisterLink.IsVisibleAsync(new() { Timeout = 2000 });
+        // 2) اقبلي الكوكيز إن وُجدت
+        await AcceptCookiesIfPresentAsync();
 
-                // If the link is not visible, assume mobile view and click the menu.
-                if (!isLinkVisible && await MobileMenu.IsVisibleAsync())
-                {
-                    await MobileMenu.ClickAsync(new() { Force = true });
-                }
+        // 3) اغلقي أي شريط إشعار قد يغطي العناصر
+        await DismissNotificationBarIfPresentAsync();
 
-                // Step 3: Final, robust verification.
-                // Wait for the header to be ready, then the specific link.
-                await Assertions.Expect(HeaderMenu).ToBeVisibleAsync(new() { Timeout = 30_000 });
-                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
-            }
-            catch (Exception)
-            {
-                // If anything above fails, take a screenshot immediately.
-                string screenshotPath = Path.Combine("artifacts", "screenshots", $"failure-{DateTime.Now:yyyyMMdd_HHmmss}.png");
-                Directory.CreateDirectory(Path.GetDirectoryName(screenshotPath)!);
-                await _page.ScreenshotAsync(new() { Path = screenshotPath, FullPage = true });
+        // 4) تحقّق جاهزية الصفحة عبر عنصر موثوق (بديل .header-menu)
+        var readyAnchor = _page.Locator(".header-logo a, a.ico-cart").First;
+        await Assertions.Expect(readyAnchor).ToBeVisibleAsync(new()
+        {
+            Timeout = 30000
+        });
+    }
 
-                TestContext.Out.WriteLine($"CRITICAL FAILURE: Screenshot saved to {screenshotPath}");
+    private async Task AcceptCookiesIfPresentAsync()
+    {
+        // أزرار شائعة في الديمو
+        var cookieBtn = _page.Locator("#eu-cookie-ok, .cookie-bar button, text=I agree").First;
 
-                // Re-throw the exception so the test still reports the failure correctly.
-                throw;
-            }
+        if (await IsQuicklyVisibleAsync(cookieBtn, 1000))
+        {
+            await cookieBtn.ClickAsync();
+            await _page.WaitForTimeoutAsync(200);
         }
+    }
 
-        [TearDown]
+    private async Task DismissNotificationBarIfPresentAsync()
+    {
+        var bar = _page.Locator("#bar-notification");
+        if (await IsQuicklyVisibleAsync(bar, 1000))
+        {
+            var close = bar.Locator(".close, .close-notification").First;
+            if (await IsQuicklyVisibleAsync(close, 500))
+                await close.ClickAsync();
+
+            await bar.WaitForAsync(new()
+            {
+                State = WaitForSelectorState.Hidden,
+                Timeout = 5000
+            });
+        }
+    }
+
+    // Helper بدون أي API قديم/مهجور
+    private static async Task<bool> IsQuicklyVisibleAsync(ILocator locator, int timeoutMs = 800)
+    {
+        try
+        {
+            await locator.WaitForAsync(new()
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = timeoutMs
+            });
+            return true;
+        }
+        catch (TimeoutException) { return false; }
+        catch (PlaywrightException) { return false; }
+    }
+
+
+    [TearDown]
         public async Task TearDownTest()
         {// --- تعديل مهم: منطق جديد وموثوق لحفظ الآثار ---
             if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
