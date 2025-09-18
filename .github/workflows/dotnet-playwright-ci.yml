@@ -34,7 +34,7 @@ jobs:
         run: pwsh ./bin/Release/net9.0/playwright.ps1 install --with-deps
         
       - name: Print TestBase.cs content
-        run: cat PlaywrightTests/Utils/TestBase.cs
+        run: cat ./PlaywrightTests/Utils/TestBase.cs
         
       - name: Test
         run: dotnet test -c Release --no-build --logger "trx;LogFileName=test_results.trx" --results-directory artifacts
