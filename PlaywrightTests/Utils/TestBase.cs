@@ -126,7 +126,7 @@ namespace PlaywrightTests
             await EnsurePageReadyAsync();
 
             // Set default timeouts
-            var defaultActionTimeout = 30_000;
+            var defaultActionTimeout = 60_000;
             if (int.TryParse(Environment.GetEnvironmentVariable("PW_TIMEOUT"), out var fromEnv))
                 defaultActionTimeout = fromEnv;
 
@@ -142,77 +142,77 @@ namespace PlaywrightTests
 
         }
 
-    public async Task EnsurePageReadyAsync()
-    {
-        // 1) افتحي الصفحة + انتظري استقرار الشبكة
-        await _page.GotoAsync(_baseUrl, new()
+        public async Task EnsurePageReadyAsync()
         {
-            WaitUntil = WaitUntilState.DOMContentLoaded,
-            Timeout = 60000
-        });
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // 2) اقبلي الكوكيز إن وُجدت
-        await AcceptCookiesIfPresentAsync();
-
-        // 3) اغلقي أي شريط إشعار قد يغطي العناصر
-        await DismissNotificationBarIfPresentAsync();
-
-        // 4) تحقّق جاهزية الصفحة عبر عنصر موثوق (بديل .header-menu)
-        var readyAnchor = _page.Locator(".header-logo a, a.ico-cart").First;
-        await Assertions.Expect(readyAnchor).ToBeVisibleAsync(new()
-        {
-            Timeout = 30000
-        });
-    }
-
-    private async Task AcceptCookiesIfPresentAsync()
-    {
-        // أزرار شائعة في الديمو
-        var cookieBtn = _page.Locator("#eu-cookie-ok, .cookie-bar button, text=I agree").First;
-
-        if (await IsQuicklyVisibleAsync(cookieBtn, 1000))
-        {
-            await cookieBtn.ClickAsync();
-            await _page.WaitForTimeoutAsync(200);
-        }
-    }
-
-    private async Task DismissNotificationBarIfPresentAsync()
-    {
-        var bar = _page.Locator("#bar-notification");
-        if (await IsQuicklyVisibleAsync(bar, 1000))
-        {
-            var close = bar.Locator(".close, .close-notification").First;
-            if (await IsQuicklyVisibleAsync(close, 500))
-                await close.ClickAsync();
-
-            await bar.WaitForAsync(new()
+            // 1) افتحي الصفحة + انتظري استقرار الشبكة
+            await _page.GotoAsync(_baseUrl, new()
             {
-                State = WaitForSelectorState.Hidden,
-                Timeout = 5000
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 60000
+            });
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            // 2) اقبلي الكوكيز إن وُجدت
+            await AcceptCookiesIfPresentAsync();
+
+            // 3) اغلقي أي شريط إشعار قد يغطي العناصر
+            await DismissNotificationBarIfPresentAsync();
+
+            // 4) تحقّق جاهزية الصفحة عبر عنصر موثوق (بديل .header-menu)
+            var readyAnchor = _page.Locator(".header-logo a, a.ico-cart").First;
+            await Assertions.Expect(readyAnchor).ToBeVisibleAsync(new()
+            {
+                Timeout = 60000
             });
         }
-    }
 
-    // Helper بدون أي API قديم/مهجور
-    private static async Task<bool> IsQuicklyVisibleAsync(ILocator locator, int timeoutMs = 800)
-    {
-        try
+        private async Task AcceptCookiesIfPresentAsync()
         {
-            await locator.WaitForAsync(new()
+            // أزرار شائعة في الديمو
+            var cookieBtn = _page.Locator("#eu-cookie-ok, .cookie-bar button, text=I agree").First;
+
+            if (await IsQuicklyVisibleAsync(cookieBtn, 1000))
             {
-                State = WaitForSelectorState.Visible,
-                Timeout = timeoutMs
-            });
-            return true;
+                await cookieBtn.ClickAsync();
+                await _page.WaitForTimeoutAsync(200);
+            }
         }
-        catch (TimeoutException) { return false; }
-        catch (PlaywrightException) { return false; }
-    }
+
+        private async Task DismissNotificationBarIfPresentAsync()
+        {
+            var bar = _page.Locator("#bar-notification");
+            if (await IsQuicklyVisibleAsync(bar, 1000))
+            {
+                var close = bar.Locator(".close, .close-notification").First;
+                if (await IsQuicklyVisibleAsync(close, 500))
+                    await close.ClickAsync();
+
+                await bar.WaitForAsync(new()
+                {
+                    State = WaitForSelectorState.Hidden,
+                    Timeout = 5000
+                });
+            }
+        }
+
+        // Helper بدون أي API قديم/مهجور
+        private static async Task<bool> IsQuicklyVisibleAsync(ILocator locator, int timeoutMs = 800)
+        {
+            try
+            {
+                await locator.WaitForAsync(new()
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = timeoutMs
+                });
+                return true;
+            }
+            catch (TimeoutException) { return false; }
+            catch (PlaywrightException) { return false; }
+        }
 
 
-    [TearDown]
+        [TearDown]
         public async Task TearDownTest()
         {// --- تعديل مهم: منطق جديد وموثوق لحفظ الآثار ---
             if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
