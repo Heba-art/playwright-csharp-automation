@@ -10,10 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # كل الأوامر ستعمل داخل مجلد مشروع الاختبارات
-    defaults:
-      run:
-        working-directory: PlaywrightTests
+    env:
+      CI: true                 # بيئة CI, بعض الأكواد تعتمد عليه
+      PW_TIMEOUT: 45000        # (اختياري) مهلة افتراضية 45s لو كنتِ تقرئيها بالكود
 
     steps:
       - name: Checkout
@@ -30,18 +29,27 @@ jobs:
       - name: Build (Release)
         run: dotnet build -c Release --no-restore
 
+      # يثبت متصفحات Playwright اللازمة للتشغيل في Linux
       - name: Install Playwright browsers
-        run: pwsh ./bin/Release/net9.0/playwright.ps1 install --with-deps
-        
-      - name: Print TestBase.cs content
-        run: cat ./PlaywrightTests/Utils/TestBase.cs
-        
-      - name: Test
-        run: dotnet test -c Release --no-build --logger "trx;LogFileName=test_results.trx" --results-directory artifacts
-        env:
-          CI: true
-          PW_TIMEOUT: 45000  # 45s للعمليات الافتراضية
+        shell: pwsh
+        run: |
+          $ps1 = "$(Get-ChildItem -Path ./PlaywrightTests/bin/Release -Recurse -Filter playwright.ps1 | Select-Object -First 1).FullName"
+          if (-not $ps1) { throw "playwright.ps1 not found under ./PlaywrightTests/bin/Release" }
+          & $ps1 install --with-deps
 
+      # (اختياري للتشخيص) اطبعي موقع TestBase.cs إن احتجتي
+      - name: Locate TestBase.cs (debug)
+        run: |
+          echo "Searching for TestBase.cs …"
+          git ls-files | grep -i 'TestBase.cs' || true
+
+      - name: Test
+        run: |
+          dotnet test -c Release --no-build \
+            --logger "trx;LogFileName=test_results.trx" \
+            --results-directory PlaywrightTests/artifacts
+
+      # ارفعي نتائج التست (حتى لو فشل) — TRX + أي traces/تقارير لو مشغلة من الكود
       - name: Upload test results (TRX + traces if any)
         if: always()
         uses: actions/upload-artifact@v4
@@ -49,5 +57,13 @@ jobs:
           name: test-results
           path: |
             PlaywrightTests/artifacts
-            PlaywrightTests/bin/**/trace*.zip
+            **/trace*.zip
             **/playwright-report/**/*
+          if-no-files-found: warn
+
+      # عند الفشل اعرضي شجرة الملفات القريبة للمساعدة
+      - name: Dump tree on failure
+        if: failure()
+        run: |
+          echo "=== repo tree (top 3 levels) ==="
+          find . -maxdepth 3 -type d -print
