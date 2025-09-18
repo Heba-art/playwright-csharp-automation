@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 // NOTE: This namespace should match your project structure.
 namespace PlaywrightTests
@@ -138,34 +139,48 @@ namespace PlaywrightTests
 
             Microsoft.Playwright.Assertions.SetDefaultExpectTimeout(defaultActionTimeout);
 
-            
+
         }
         protected async Task EnsurePageReadyAsync()
         {
-             var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
             try
             {
-                await cookieOk.ClickAsync(new() { Timeout = 3000 });
-            }
-            catch (TimeoutException) { /* تجاهل */ }
+                // Step 1: Defensively handle the cookie banner.
+                var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
+                try
+                {
+                    await cookieOk.ClickAsync(new() { Timeout = 3000 });
+                }
+                catch (TimeoutException) { /* Ignore if the button doesn't appear */ }
 
-            try
-            {
-                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 2000 });
-            }
-            catch (PlaywrightException)
-            {
-                if (await MobileMenu.IsVisibleAsync())
+                // Step 2: Simplified logic to handle mobile view.
+                // First, do a quick check to see if the link is already visible.
+                var isLinkVisible = await RegisterLink.IsVisibleAsync(new() { Timeout = 2000 });
+
+                // If the link is not visible, assume mobile view and click the menu.
+                if (!isLinkVisible && await MobileMenu.IsVisibleAsync())
                 {
                     await MobileMenu.ClickAsync(new() { Force = true });
                 }
+
+                // Step 3: Final, robust verification.
+                // Wait for the header to be ready, then the specific link.
+                await Assertions.Expect(HeaderMenu).ToBeVisibleAsync(new() { Timeout = 30_000 });
+                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
             }
+            catch (Exception)
+            {
+                // If anything above fails, take a screenshot immediately.
+                string screenshotPath = Path.Combine("artifacts", "screenshots", $"failure-{DateTime.Now:yyyyMMdd_HHmmss}.png");
+                Directory.CreateDirectory(Path.GetDirectoryName(screenshotPath)!);
+                await _page.ScreenshotAsync(new() { Path = screenshotPath, FullPage = true });
 
-            // --- تعديل مهم: انتظر ظهور القائمة العلوية بأكملها أولاً ---
-            await Assertions.Expect(HeaderMenu).ToBeVisibleAsync(new() { Timeout = 10_000 });
-            await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
+                TestContext.Out.WriteLine($"CRITICAL FAILURE: Screenshot saved to {screenshotPath}");
+
+                // Re-throw the exception so the test still reports the failure correctly.
+                throw;
+            }
         }
-
 
         [TearDown]
         public async Task TearDownTest()
