@@ -3,6 +3,7 @@ using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using System;
 using System.IO;
+using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -25,6 +26,7 @@ namespace PlaywrightTests
 
         private ILocator RegisterLink => _page.Locator("a.ico-register");
         private ILocator MobileMenu => _page.Locator(".menu-toggle");
+        private ILocator HeaderMenu => _page.Locator(".header-menu");
 
         [OneTimeSetUp]
         public async Task GlobalSetup()
@@ -107,6 +109,13 @@ namespace PlaywrightTests
                 BaseURL = _baseUrl,
                 ViewportSize = new ViewportSize { Width = _viewportWidth, Height = _viewportHeight }
             });
+            // Start tracing (great for CI debugging)
+            await _context.Tracing.StartAsync(new()
+            {
+                Screenshots = true,
+                Snapshots = true,
+                Sources = true
+            });
 
             _page = await _context.NewPageAsync();
 
@@ -129,73 +138,67 @@ namespace PlaywrightTests
 
             Microsoft.Playwright.Assertions.SetDefaultExpectTimeout(defaultActionTimeout);
 
-            // Start tracing (great for CI debugging)
-            await _context.Tracing.StartAsync(new()
-            {
-                Screenshots = true,
-                Snapshots = true,
-                Sources = true
-            });
+            
         }
         protected async Task EnsurePageReadyAsync()
         {
-            // 1. Defensively handle the cookie banner.
-            var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
+             var cookieOk = _page.Locator("#eu-cookie-ok, .eu-cookie-bar-notification .close, .eu-cookie-bar button");
             try
             {
-                await cookieOk.ClickAsync(new() { Timeout = 2000 });
+                await cookieOk.ClickAsync(new() { Timeout = 3000 });
             }
-            catch (TimeoutException) { /* Ignore if the button doesn't appear */ }
+            catch (TimeoutException) { /* تجاهل */ }
 
-            // 2. Cleverly handle mobile vs. desktop viewports.
             try
             {
-                // Quick check to see the link (for desktop view).
-                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 1000 });
+                await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 2000 });
             }
             catch (PlaywrightException)
             {
-                // If it fails, assume it's a mobile view and click the menu.
                 if (await MobileMenu.IsVisibleAsync())
                 {
-                    await MobileMenu.ClickAsync();
+                    await MobileMenu.ClickAsync(new() { Force = true });
                 }
             }
 
-            // 3. The final assertion to ensure the link is now visible.
-            await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 10_000 });
+            // --- تعديل مهم: انتظر ظهور القائمة العلوية بأكملها أولاً ---
+            await Assertions.Expect(HeaderMenu).ToBeVisibleAsync(new() { Timeout = 10_000 });
+            await Assertions.Expect(RegisterLink).ToBeVisibleAsync(new() { Timeout = 5_000 });
         }
+
 
         [TearDown]
         public async Task TearDownTest()
-        {
-            // Create directories for artifacts if they don't exist
-            Directory.CreateDirectory("artifacts/screenshots");
-            Directory.CreateDirectory("artifacts/traces");
-
-            var failed = TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed;
-            var id = TestContext.CurrentContext.Test.ID;
-
-            // Take a screenshot on failure
-            if (failed && _page is not null)
+        {// --- تعديل مهم: منطق جديد وموثوق لحفظ الآثار ---
+            if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
             {
-                await _page.ScreenshotAsync(new()
+                var testId = TestContext.CurrentContext.Test.ID;
+                var screenshotPath = Path.Combine("artifacts", "screenshots", $"{testId}.png");
+                Directory.CreateDirectory(Path.GetDirectoryName(screenshotPath)!);
+                await _page.ScreenshotAsync(new() { Path = screenshotPath, FullPage = true });
+                TestContext.AddTestAttachment(screenshotPath, "Screenshot on failure");
+            }
+
+            // ضع إيقاف التتبع في try-catch لتجنب الخطأ
+            try
+            {
+                var tracePath = Path.Combine("artifacts", "traces", $"{TestContext.CurrentContext.Test.ID}.zip");
+                if (TestContext.CurrentContext.Result.Outcome.Status == TestStatus.Failed)
                 {
-                    Path = $"artifacts/screenshots/{id}.png",
-                    FullPage = true
-                });
+                    await _context.Tracing.StopAsync(new() { Path = tracePath });
+                    TestContext.AddTestAttachment(tracePath, "Playwright Trace on failure");
+                }
+                else
+                {
+                    await _context.Tracing.StopAsync(); // أوقف التتبع بدون حفظ الملف
+                }
             }
-
-            // Stop tracing and save the file only on failure
-            if (_context is not null)
+            catch (Exception ex)
             {
-                var tracePath = failed ? $"artifacts/traces/{id}.zip" : null;
-                await _context.Tracing.StopAsync(new() { Path = tracePath });
+                TestContext.Out.WriteLine($"Could not stop tracing: {ex.Message}");
             }
 
-            // Close the per-test context
-            if (_context is not null)
-                await _context.CloseAsync();
+            await _context.CloseAsync();
         }
 
         [OneTimeTearDown]
