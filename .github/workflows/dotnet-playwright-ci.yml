@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CI: true                 # بيئة CI, بعض الأكواد تعتمد عليه
-      PW_TIMEOUT: 45000        # (اختياري) مهلة افتراضية 45s لو كنتِ تقرئيها بالكود
+      CI: true               # إشارة لبيئة CI (يقرأها الكود عند الحاجة)
+      PW_TIMEOUT: 45000      # (اختياري) مهلة افتراضية لو تقرئينها من Environment
 
     steps:
       - name: Checkout
@@ -29,7 +29,7 @@ jobs:
       - name: Build (Release)
         run: dotnet build -c Release --no-restore
 
-      # يثبت متصفحات Playwright اللازمة للتشغيل في Linux
+      # تثبيت متصفحات Playwright لمشروع C# (على لينكس)
       - name: Install Playwright browsers
         shell: pwsh
         run: |
@@ -37,20 +37,27 @@ jobs:
           if (-not $ps1) { throw "playwright.ps1 not found under ./PlaywrightTests/bin/Release" }
           & $ps1 install --with-deps
 
-      # (اختياري للتشخيص) اطبعي موقع TestBase.cs إن احتجتي
+      # (اختياري للتشخيص) ابحثي عن TestBase.cs
       - name: Locate TestBase.cs (debug)
         run: |
           echo "Searching for TestBase.cs …"
           git ls-files | grep -i 'TestBase.cs' || true
 
+      # أنشئي مجلد الـ artifacts مسبقًا
+      - name: Prepare artifacts dir
+        run: mkdir -p PlaywrightTests/artifacts
+
+      # شغّلي الاختبارات وسجّلي اللوج لملف
       - name: Test
         run: |
+          set -o pipefail
           dotnet test -c Release --no-build \
             --logger "trx;LogFileName=test_results.trx" \
-            --results-directory PlaywrightTests/artifacts
+            --results-directory PlaywrightTests/artifacts \
+          | tee PlaywrightTests/artifacts/test.log
 
-      # ارفعي نتائج التست (حتى لو فشل) — TRX + أي traces/تقارير لو مشغلة من الكود
-      - name: Upload test results (TRX + traces if any)
+      # ارفعي النتائج دائمًا (حتى لو فشل)
+      - name: Upload test results (TRX + logs + traces)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -61,7 +68,7 @@ jobs:
             **/playwright-report/**/*
           if-no-files-found: warn
 
-      # عند الفشل اعرضي شجرة الملفات القريبة للمساعدة
+      # عند الفشل اطبعي شجرة المجلدات للمساعدة
       - name: Dump tree on failure
         if: failure()
         run: |
