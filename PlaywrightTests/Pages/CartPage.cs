@@ -19,6 +19,12 @@ namespace PlaywrightTests.Pages
         public ILocator FirstRowUnitPrice => CartTable.Locator("td.unit-price").First;
         public ILocator FirstRowQtyInput => CartTable.Locator("input.qty-input").First;
         public ILocator FirstRowSubtotal => CartTable.Locator("td.subtotal").First;
+        public ILocator FirstRowRemoveButton => CartTable.Locator("button.remove-btn").First;
+        public ILocator TermsOfServiceCheckbox => _page.GetByRole(AriaRole.Checkbox,
+        new() { NameRegex = new System.Text.RegularExpressions.Regex("I agree with the terms of service") });
+
+        public ILocator CheckoutButton => _page.GetByRole(AriaRole.Button,
+                new() { Name = "Checkout", Exact = true });
 
         public async Task<string> GetFirstItemNameAsync()
         {
@@ -63,5 +69,41 @@ namespace PlaywrightTests.Pages
         // IsCartEmpty method
         public async Task<bool> IsCartEmpty()
          => await _page.GetByText("Your Shopping Cart is empty", new() { Exact = false }).CountAsync() > 0;
-    }
+
+        public async Task UpdateFirstItemQuantityAsync(int quantity)
+        {
+            if (quantity < 1)
+                throw new System.ArgumentOutOfRangeException(nameof(quantity));
+
+            var oldSubtotal = await GetFirstItemSubtotalRawAsync();
+
+            await FirstRowQtyInput.FillAsync(quantity.ToString());
+            await FirstRowQtyInput.PressAsync("Enter");
+
+            await _page.WaitForFunctionAsync(
+               @"oldSubtotal => {
+                const subtotal = document.querySelector('table.cart td.subtotal');
+                return subtotal && subtotal.textContent.trim() !== oldSubtotal ;
+                }",
+               oldSubtotal,
+               new() { Timeout = 10000 });
+
+        }
+        public async Task RemoveFirstItemAsync()
+        {
+            await FirstRowRemoveButton.ClickAsync();
+
+            await _page.GetByText(
+                "Your Shopping Cart is empty",
+                new() { Exact = false })
+                .WaitForAsync(new() { Timeout = 10000 });
+        }
+        public async Task ProceedToCheckoutAsync()
+        {
+            await TermsOfServiceCheckbox.CheckAsync();
+            await CheckoutButton.ClickAsync();
+        }
+
+
+    }   
 }

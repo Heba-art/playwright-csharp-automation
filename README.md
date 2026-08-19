@@ -4,27 +4,32 @@
 ![NUnit](https://img.shields.io/badge/TestFramework-NUnit-green)
 ![Playwright](https://img.shields.io/badge/Playwright-C%23-2ea44f)
 ![Docker](https://img.shields.io/badge/Docker-Local%20Test%20Environment-2496ED)
+![MCP](https://img.shields.io/badge/Playwright-MCP-purple)
 ![Platform](https://img.shields.io/badge/Platform-nopCommerce-orange)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Status](https://img.shields.io/badge/Status-In%20Progress-lightgrey)
-
-![Profile Views](https://komarev.com/ghpvc/?username=heba-art&color=blue)
-![GitHub Repo stars](https://img.shields.io/github/stars/heba-art/playwright-csharp-automation?style=social)
-![GitHub forks](https://img.shields.io/github/forks/heba-art/playwright-csharp-automation?style=social)
+![Tests](https://img.shields.io/badge/Tests-10%2F10%20Passing-brightgreen)
 
 End-to-end UI test automation project using **Playwright for .NET**, **C#**, and **NUnit**, following the **Page Object Model (POM)** design pattern.
 
-The project automates key user journeys on **nopCommerce**, including registration, login, product search, and shopping cart functionality.
+The project automates realistic nopCommerce user journeys including registration, login, product search, cart operations, wishlist, guest checkout, and product sorting.
+
+It also demonstrates **AI-assisted test exploration using Microsoft Playwright MCP**.
 
 ---
 
 ## ✅ Current Test Result
 
-The current automated test suite has been successfully verified against a local nopCommerce environment running in Docker.
+The complete automated regression suite has been successfully verified against a local nopCommerce environment running in Docker.
 
 ```text
-Test summary: total: 5, failed: 0, succeeded: 5, skipped: 0
+Test summary:
+total: 10
+failed: 0
+succeeded: 10
+skipped: 0
 ```
+
+**Current regression status: 10 / 10 tests passing ✅**
 
 ---
 
@@ -36,50 +41,44 @@ The project originally ran against:
 https://demo.nopcommerce.com
 ```
 
-During automation testing, the public demo website started displaying:
+During automation testing, the public demo website began displaying Cloudflare security verification:
 
 ```text
-Cloudflare – Verify you are human
+Verify you are human
 ```
 
-This blocked Playwright from reaching the nopCommerce application and caused all existing tests to fail.
+This prevented Playwright from reliably reaching the application and caused previously working automated tests to fail.
 
 The test code itself was not the problem.
 
-To create a more stable and controlled automation environment, nopCommerce and SQL Server were run locally using Docker.
+To create a stable and controlled automation environment, nopCommerce and SQL Server are now run locally using Docker.
 
 ### Before
 
 ```text
 Playwright
-    |
-    v
+    ↓
 demo.nopcommerce.com
-    |
-    v
+    ↓
 Cloudflare
-    |
-    X
+    ↓
 Tests blocked
 ```
 
-### Now
+### Current Environment
 
 ```text
 Playwright + NUnit
-       |
-       v
+        ↓
 http://localhost:8080
-       |
-       v
+        ↓
 Docker
-       |
-       +---- nopcommerce-local
-       |
-       +---- nopcommerce-sql
+   ┌────┴─────┐
+   ↓          ↓
+nopCommerce  SQL Server 2022
 ```
 
-This provides a stable local environment without depending on external anti-bot protection.
+This gives the automation suite a controlled test environment without depending on public-site anti-bot protection.
 
 ---
 
@@ -90,11 +89,13 @@ PlaywrightTests/
 │
 ├── Pages/
 │   ├── CartPage.cs
+│   ├── CheckoutPage.cs
 │   ├── HomePage.cs
 │   ├── LoginPage.cs
 │   ├── ProductPage.cs
 │   ├── RegisterPage.cs
-│   └── SearchResultsPage.cs
+│   ├── SearchResultsPage.cs
+│   └── WishlistPage.cs
 │
 ├── Tests/
 │   │
@@ -118,28 +119,19 @@ PlaywrightTests/
 
 **Pages**
 
-Contains the Page Object Model classes used to separate page locators and actions from the test logic.
+Contains Page Object Model classes that separate page locators and reusable actions from test logic.
 
 **Tests**
 
-Contains the NUnit automated test cases organised by feature.
+Contains NUnit automated test cases organised by feature.
 
 **Utils**
 
-Contains reusable test utilities such as browser setup, configuration, test data generation, credentials, tracing, and cleanup.
-
-**appsettings.json**
-
-Contains the default test configuration such as:
-
-- Base URL
-- Browser
-- Headless mode
-- Viewport size
+Contains reusable framework utilities including browser setup, environment configuration, dynamic test data, credentials, tracing, screenshots, and cleanup.
 
 ---
 
-## ✅ Implemented Test Cases
+# ✅ Automated Test Coverage
 
 | ID | Test Case | Type | Status |
 |---|---|---|---|
@@ -148,31 +140,91 @@ Contains the default test configuration such as:
 | TC-003 | Login with Invalid Password | Negative | ✅ Passed |
 | TC-004 | Search Product – Exact Match | Functional | ✅ Passed |
 | TC-005 | Add to Cart from Product Page | Smoke / Functional | ✅ Passed |
+| TC-006 | Update Quantity in Cart | Functional | ✅ Passed |
+| TC-007 | Remove Item from Cart | Functional | ✅ Passed |
+| TC-008 | Wishlist to Cart Flow | End-to-End | ✅ Passed |
+| TC-009 | Checkout as Guest – Valid Flow | End-to-End | ✅ Passed |
+| TC-010 | Sort Products – Price Low → High | Functional | ✅ Passed |
 
 ---
 
-## 🚧 Planned Test Cases
+# 🤖 AI-Assisted Testing with Playwright MCP
 
-| ID | Test Case | Status |
-|---|---|---|
-| TC-006 | Update Quantity in Cart | 🟡 Planned |
-| TC-007 | Remove Item from Cart | 🟡 Planned |
-| TC-008 | Wishlist to Cart Flow | 🟡 Planned |
-| TC-009 | Checkout as Guest – Valid Flow | 🟡 Planned |
-| TC-010 | Sort Products – Price Low → High | 🟡 Planned |
+Microsoft **Playwright MCP** was introduced into the project to support AI-assisted test exploration.
+
+Rather than using MCP simply to generate test code, it was used as an **exploration and debugging assistant**.
+
+A practical example was **TC-009 – Checkout as Guest**.
+
+The guest checkout contains multiple stages:
+
+```text
+Product
+    ↓
+Shopping Cart
+    ↓
+Accept Terms
+    ↓
+Checkout
+    ↓
+Checkout as Guest
+    ↓
+Billing Address
+    ↓
+Shipping Method
+    ↓
+Payment Method
+    ↓
+Payment Information
+    ↓
+Confirm Order
+    ↓
+Order Success
+```
+
+Playwright MCP was used to:
+
+- Explore the complete checkout workflow in the live local application
+- Capture fresh accessibility snapshots as application state changed
+- Identify accessible role- and label-based locators
+- Discover required billing, shipping, payment and confirmation controls
+- Validate the actual successful checkout path
+- Assist with debugging locator issues
+
+During this exploration, MCP also revealed that the existing Add to Cart locator was tied to one specific product ID.
+
+The original locator:
+
+```csharp
+_page.Locator("button#add-to-cart-button-1");
+```
+
+was refactored to a reusable accessible locator:
+
+```csharp
+_page.GetByRole(
+    AriaRole.Button,
+    new() { Name = "Add to cart", Exact = true }).First;
+```
+
+This allows the Page Object to support different products without depending on product-specific element IDs.
+
+The final test implementation remains structured in **C# + Playwright + NUnit**.
 
 ---
 
-## 🛠️ Technologies Used
+# 🛠️ Technologies Used
 
 - C#
 - .NET 9
 - Microsoft Playwright for .NET
 - NUnit
 - Page Object Model (POM)
+- Microsoft Playwright MCP
 - Docker Desktop
 - SQL Server 2022
 - Visual Studio 2022
+- Visual Studio Code
 - Git
 - GitHub
 - GitHub Actions
@@ -190,7 +242,7 @@ Install:
 - .NET 9 SDK
 - Visual Studio 2022
 
-Make sure Docker Desktop shows:
+Docker Desktop should show:
 
 ```text
 Engine running
@@ -198,21 +250,29 @@ Engine running
 
 ---
 
-## 1. Pull the nopCommerce Docker Image
+## 1. Start Existing Containers
+
+After the initial setup, the normal daily workflow is:
 
 ```powershell
-docker pull nopcommerceteam/nopcommerce:latest
+docker start nopcommerce-sql
+docker start nopcommerce-local
 ```
 
----
-
-## 2. Start nopCommerce
+Check:
 
 ```powershell
-docker run -d --name nopcommerce-local -p 8080:80 nopcommerceteam/nopcommerce:latest
+docker ps
 ```
 
-The application will be available at:
+Both should be running:
+
+```text
+nopcommerce-sql
+nopcommerce-local
+```
+
+Then open:
 
 ```text
 http://localhost:8080
@@ -220,7 +280,23 @@ http://localhost:8080
 
 ---
 
-## 3. Start SQL Server
+## 2. Initial nopCommerce Docker Setup
+
+Pull the image:
+
+```powershell
+docker pull nopcommerceteam/nopcommerce:latest
+```
+
+Create the nopCommerce container:
+
+```powershell
+docker run -d --name nopcommerce-local -p 8080:80 nopcommerceteam/nopcommerce:latest
+```
+
+---
+
+## 3. SQL Server 2022
 
 Use your own strong SQL Server password.
 
@@ -232,21 +308,13 @@ docker run -d --name nopcommerce-sql `
 mcr.microsoft.com/mssql/server:2022-latest
 ```
 
-Do not commit real passwords or credentials to GitHub.
+**Never commit real passwords or credentials to GitHub.**
 
 ---
 
-## 4. Configure nopCommerce
+## 4. nopCommerce Installation Settings
 
-Open:
-
-```text
-http://localhost:8080
-```
-
-The nopCommerce installation page should appear.
-
-Recommended settings:
+Recommended local installation settings:
 
 ```text
 Country:
@@ -261,138 +329,79 @@ Microsoft SQL Server
 Create database if it doesn't exist:
 Yes
 
-Server name:
+Server:
 host.docker.internal,1433
 
-Database name:
+Database:
 nopcommerce
 
-SQL Username:
+Username:
 sa
 
-SQL Password:
-<same password used when creating the SQL Server container>
+Password:
+<YourStrongPassword>
 ```
 
-### Why Create Sample Data?
-
-The automation tests use sample nopCommerce products such as:
-
-```text
-Build your own computer
-```
-
-Therefore, **Create sample data** should be selected during installation.
+Sample data is required because the automation suite uses nopCommerce sample products.
 
 ---
 
-## 5. Restart nopCommerce After Installation
+# ▶️ Running the Tests
 
-nopCommerce may stop automatically after completing installation.
-
-Check the containers:
-
-```powershell
-docker ps -a
-```
-
-If `nopcommerce-local` shows:
-
-```text
-Exited (0)
-```
-
-start it again:
-
-```powershell
-docker start nopcommerce-local
-```
-
-Then open:
-
-```text
-http://localhost:8080
-```
-
----
-
-## 6. Check Running Containers
-
-```powershell
-docker ps
-```
-
-Both containers should be running:
-
-```text
-nopcommerce-local
-nopcommerce-sql
-```
-
----
-
-# ▶️ Running the Playwright Tests
-
-Navigate to the project:
+Navigate to:
 
 ```powershell
 cd C:\playwright-csharp-automation\PlaywrightTests
 ```
 
-Restore NuGet packages:
-
-```powershell
-dotnet restore
-```
-
-Install Playwright browsers if required:
-
-```powershell
-pwsh bin/Debug/net9.0/playwright.ps1 install
-```
-
----
-
-## Run All Tests
-
-For local Docker testing, set the local nopCommerce URL:
+Set the local test environment:
 
 ```powershell
 $env:BASE_URL="http://localhost:8080"
+```
+
+Optional – display the browser while tests execute:
+
+```powershell
+$env:HEADLESS="false"
+```
+
+Run the complete suite:
+
+```powershell
 dotnet test
 ```
 
-Expected current result:
+Current expected result:
 
 ```text
-total: 5
+total: 10
 failed: 0
-succeeded: 5
+succeeded: 10
+skipped: 0
 ```
 
 ---
 
 ## Run One Test
 
-Example – TC-001 Registration:
+Example – TC-009 Guest Checkout:
 
 ```powershell
-dotnet test --filter "Name~Register_HappyPath_ShowsSuccessAndLogsUserIn"
+dotnet test --filter "Name~CheckoutAsGuest_ShouldCompleteOrderSuccessfully"
 ```
 
-Expected result:
+Example – TC-010 Product Sorting:
 
-```text
-total: 1
-failed: 0
-succeeded: 1
+```powershell
+dotnet test --filter "Name~SortProducts_PriceLowToHigh_ShouldDisplayAscendingPrices"
 ```
 
 ---
 
 # ⚙️ Configuration
 
-The default configuration is stored in:
+Default configuration is stored in:
 
 ```text
 PlaywrightTests/appsettings.json
@@ -412,9 +421,7 @@ Example:
 }
 ```
 
-The project also supports environment variable overrides.
-
-Available variables:
+Environment variables can override the shared configuration:
 
 ```text
 BASE_URL
@@ -432,30 +439,61 @@ $env:HEADLESS="false"
 dotnet test
 ```
 
-Using `BASE_URL` allows the developer to use the local Docker environment without permanently changing the shared configuration.
+This allows local Docker testing without permanently changing the shared configuration.
 
 ---
 
-# 🔍 Playwright Test Features
+# 🔍 Framework Features
 
-The framework currently includes:
+The automation framework currently demonstrates:
 
 - Page Object Model
 - NUnit test organisation
-- Browser configuration
-- Environment variable configuration
-- Dynamic test data generation
-- Registration and login flows
-- Negative login validation
+- Async Playwright browser interactions
+- Environment-based configuration
+- Dynamic registration data
+- Positive and negative authentication testing
 - Product search
 - Product configuration
 - Add-to-cart validation
-- Price validation
-- Cart subtotal validation
+- Cart quantity updates
+- Cart item removal
+- Wishlist-to-cart workflow
+- Guest checkout
+- Billing and shipping automation
+- Payment workflow using test data
+- Product price sorting validation
+- Price parsing and subtotal validation
+- Accessible role- and label-based locators
 - Browser context isolation
 - Screenshots on failure
 - Playwright tracing
-- CI-friendly configuration
+- Docker-based local test environment
+- SQL Server container
+- AI-assisted test exploration using Playwright MCP
+- CI-friendly framework configuration
+
+---
+
+# 🧠 Automation Lessons Demonstrated
+
+Several framework improvements came directly from debugging real test failures.
+
+### Generic Locators
+
+A product-specific Add to Cart locator was replaced with a reusable accessible role-based locator.
+
+### Synchronisation
+
+TC-010 demonstrated the importance of waiting for the application state to update after changing product sorting instead of immediately reading stale UI data.
+
+### Controlled Test Environment
+
+Moving from the public nopCommerce demo to Docker removed Cloudflare as an external dependency and made test execution more predictable.
+
+### AI-Assisted Exploration
+
+Playwright MCP was most useful for exploring the complex Guest Checkout workflow, discovering accessible controls, and helping diagnose locator problems.
 
 ---
 
@@ -469,51 +507,44 @@ http://localhost:8080
 
 running on a developer's personal computer.
 
-For CI/CD, the automation environment should use either:
+A future CI implementation can start the required Docker containers directly inside the GitHub Actions runner or execute against a dedicated test environment.
 
-1. A dedicated externally accessible test environment, or
-2. Docker containers started directly inside the GitHub Actions workflow.
-
-The public:
-
-```text
-https://demo.nopcommerce.com
-```
-
-website may occasionally display Cloudflare security verification, so it should not be considered a fully controlled automation environment.
+The public nopCommerce demo may display Cloudflare verification and therefore is not treated as a fully controlled automation environment.
 
 ---
 
-# 📈 Project Roadmap
+# 📈 Roadmap
 
-Current:
-
-```text
-TC-001 → TC-005 ✅
-```
-
-Next:
+## Completed
 
 ```text
-TC-006 – Update Quantity in Cart
-TC-007 – Remove Item from Cart
-TC-008 – Wishlist to Cart
-TC-009 – Guest Checkout
-TC-010 – Product Sorting
+TC-001 → TC-010 ✅
+Full regression: 10 / 10 passing ✅
+Local Docker environment ✅
+Playwright MCP exploration ✅
 ```
 
-Future improvements may include:
+## Future Enhancements
 
-- Cross-browser testing
-- Parallel execution
-- API testing
-- Test categories
-- Data-driven testing
-- Docker Compose
-- Docker-based GitHub Actions environment
-- HTML test reporting
-- Retry strategy
-- Additional regression scenarios
+```text
+Cross-browser execution
+        ↓
+Parallel test execution
+        ↓
+Test tagging: Smoke / Regression
+        ↓
+Data-driven testing
+        ↓
+API testing
+        ↓
+HTML reporting
+        ↓
+Retry / flaky-test strategy
+        ↓
+Docker Compose
+        ↓
+Docker-based GitHub Actions CI
+```
 
 ---
 
@@ -521,8 +552,6 @@ Future improvements may include:
 
 **Heba AL-Rubaye**
 
-Professional portfolio project focused on **QA Automation / Test Automation Engineering**.
+QA Automation portfolio project demonstrating practical experience with:
 
-The project demonstrates practical experience with:
-
-**C# · Playwright · NUnit · Page Object Model · Docker · SQL Server · GitHub Actions**
+**C# · Playwright · NUnit · Page Object Model · Docker · SQL Server · Playwright MCP · Git · GitHub**

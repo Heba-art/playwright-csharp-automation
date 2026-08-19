@@ -10,9 +10,14 @@ namespace PlaywrightTests.Pages
 
         public ILocator ProductTitle => _page.Locator("div.product-name h1");
         public ILocator SuccessBar => _page.Locator("#bar-notification");
-        private ILocator AddToCartButton => _page.Locator("button#add-to-cart-button-1");
+        private ILocator AddToCartButton =>
+            _page.GetByRole(AriaRole.Button,
+        new() { Name = "Add to cart", Exact = true }).First;
         private ILocator CartBadge => _page.Locator("span.cart-qty");
         private ILocator PriceOnPdp => _page.Locator("span.price-value-1");
+        private ILocator AddToWishlistButton => _page.Locator("button#add-to-wishlist-button-1");
+
+        private ILocator WishlistBadge => _page.Locator("span.wishlist-qty");
 
         public async Task<string> GetDisplayedPriceAsync() => (await PriceOnPdp.InnerTextAsync()).Trim();
         public async Task SelectProcessorAsync(string text)
@@ -95,6 +100,24 @@ namespace PlaywrightTests.Pages
             {
                 TestContext.Out.WriteLine("✅ Cart badge changed, item added.");
             }
+        }
+        public async Task AddToWishlistAsync()
+        {
+            var before = (await WishlistBadge.InnerTextAsync()).Trim();
+
+            await Microsoft.Playwright.Assertions.Expect(AddToWishlistButton)
+                .ToBeEnabledAsync();
+
+            await AddToWishlistButton.ClickAsync();
+
+            // Wait until Wishlist badge changes
+            await _page.WaitForFunctionAsync(
+                @"prev => {
+            const badge = document.querySelector('span.wishlist-qty');
+            return badge && badge.textContent.trim() !== prev;
+        }",
+                before,
+                new() { Timeout = 8000 });
         }
         public async Task WaitForPriceAsync(decimal? expected = null, int timeoutMs = 15000, int stableWindowMs = 800)
         {

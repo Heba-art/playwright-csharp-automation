@@ -32,5 +32,37 @@ namespace PlaywrightTests.Tests.Catalog
         Assert.That(await results.HasProductAsync(target),Is.True, $"Product '{target}' was not found in search results.");
 
         }
+        [Test, Order(10)]
+        public async Task SortProducts_PriceLowToHigh_ShouldDisplayAscendingPrices()
+        {
+            // Arrange - Open Notebooks category
+            await _page.GotoAsync($"{_baseUrl}/notebooks");
+
+            var productsPage = new SearchResultsPage(_page);
+
+            // Act - Sort products by price: Low to High
+            await productsPage.SortByPriceLowToHighAsync();
+            //await _page.WaitForTimeoutAsync(5000);
+
+            // Read prices as displayed on the website
+            var actualPrices = await productsPage.GetProductPricesAsync();
+
+            // Make sure we have enough products to test sorting
+            Assert.That(
+                actualPrices.Count,
+                Is.GreaterThan(1),
+                "Not enough products were found to verify sorting.");
+
+            // Create the expected correctly sorted list
+            var expectedPrices = actualPrices
+                .OrderBy(price => price)
+                .ToList();
+
+            // Assert - Website prices should already be in ascending order
+            Assert.That(
+                actualPrices,
+                Is.EqualTo(expectedPrices),
+                $"Products are not sorted Low to High. Actual: {string.Join(", ", actualPrices)}");
+        }
     }   
 }
